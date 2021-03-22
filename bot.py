@@ -6,6 +6,15 @@ from telegram.ext import Updater, CommandHandler, ConversationHandler, MessageHa
 from dotenv import load_dotenv
 
 load_dotenv('.env')
+WEEKDAYS = {
+    'Понедельник': 0,
+    'Вторник': 1,
+    'Среда': 2,
+    'Четверг': 3,
+    'Пятница': 4,
+    'Суббота': 5,
+    'Воскресенье': 6
+}
 
 
 def start(update, context):
@@ -15,7 +24,10 @@ def start(update, context):
 def daily_timetable_start(update, context):
     markup = [['Назад']]
     key = ReplyKeyboardMarkup(markup, resize_keyboard=True, one_time_keyboard=True)
-    update.message.reply_text('Укажите номер группы и дату в формате NNN ДД ММ ГГГГ', reply_markup=key)
+    update.message.reply_text(
+        'Введите номер группы и день недели (120 Понедельник)\n\n'
+        'Либо номер группы и дату, для получения расписания с учетом временных изменений (120 23 03 2021)',
+        reply_markup=key)
     return 1
 
 
@@ -25,28 +37,24 @@ def get_daily_timetable(update, context):
         if message == 'Назад':
             update.message.reply_text('Возвращаемся назад', reply_markup=ReplyKeyboardRemove())
             return ConversationHandler.END
-        message = message.split()
-        if len(message) != 4:
-            raise KeyError
-        group, day, month, year = map(int, message)
-        date = datetime.date(year, month, day)
-        days_delta = (date - datetime.date.today()).days
-        if days_delta < 0:
-            update.message.reply_text('Не могу вернуться в прошлое', reply_markup=ReplyKeyboardRemove())
-            return ConversationHandler.END
-        if days_delta > 7:
-            update.message.reply_text('Дальше недели не вижу', reply_markup=ReplyKeyboardRemove())
-            return ConversationHandler.END
-        weekday = date.weekday()
-        if weekday == 6:
-            update.message.reply_text('В воскресенье не учимся', reply_markup=ReplyKeyboardRemove())
-            return ConversationHandler.END
         connection = sqlite3.connect('db/timetables.db')
         cursor = connection.cursor()
-        schedule = cursor.execute("""SELECT schedule FROM default_timetables_students 
-                                    WHERE "group" = ? AND weekday = ?""", (group, weekday)).fetchone()
-        update.message.reply_text(schedule, reply_markup=ReplyKeyboardRemove())
-        return ConversationHandler.END
+        message = message.split()
+        if len(message) == 2:
+            group = int(message[0])
+            weekday = WEEKDAYS[message[1].capitalize()]
+            schedule = cursor.execute("""SELECT schedule FROM default_timetables_students 
+                                                    WHERE "group" = ? AND weekday = ?""", (group, weekday)).fetchone()
+            update.message.reply_text(schedule[0], reply_markup=ReplyKeyboardRemove())
+            return ConversationHandler.END
+        elif len(message) == 4:
+            group, day, month, year = map(int, message)
+            date = datetime.date(year, month, day)
+            schedule = cursor.execute("""SELECT schedule FROM temp_timetables_students 
+                                        WHERE "group" = ? AND date = ?""", (group, date)).fetchone()
+            update.message.reply_text(schedule, reply_markup=ReplyKeyboardRemove())
+            return ConversationHandler.END
+        raise KeyError
 
     except (KeyError, ValueError):
         update.message.reply_text('Некорректный запрос', reply_markup=ReplyKeyboardRemove())
