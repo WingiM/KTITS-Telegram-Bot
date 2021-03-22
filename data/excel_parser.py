@@ -4,7 +4,7 @@ wb = openpyxl.load_workbook("rasp.xlsx")
 sheet_names = wb.sheetnames
 
 
-def parseLesson(sym1, sym2):
+def parseLesson(startCol, endCol):
     temp_lessons = []
     return_dict = {}
     a = 8
@@ -12,7 +12,7 @@ def parseLesson(sym1, sym2):
     sheet = wb[sheet_names[0]]
     while a <= 41:
         for i in range(a, a + 6):
-            for cellObj in sheet[f"{sym1}{i}:{sym2}{i}"]:
+            for cellObj in sheet[f"{startCol}{i}:{endCol}{i}"]:
                 lesson = ""
                 for cell in cellObj:
                     if cell.value is None:
