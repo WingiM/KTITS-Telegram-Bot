@@ -1,10 +1,10 @@
 import os
 import sqlite3
-from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Bot
 from telegram.ext import Updater, CommandHandler, ConversationHandler, MessageHandler, Filters
 from dotenv import load_dotenv
 
-load_dotenv('../.env')
+load_dotenv('.env')
 WEEKDAYS = {
     'Понедельник': 0,
     'Вторник': 1,
@@ -18,7 +18,8 @@ WEEKDAYS = {
 
 def start(update, context):
     update.message.reply_text(f'Здравствуй, {update.message.from_user["first_name"]}!')
-    link_checker(update, context)
+    if not link_checker(update, context):
+        update.message.reply_text('Ваш аккаунт не привязан к системе! Используйте /link, чтобы привязаться')
 
 
 #
@@ -104,23 +105,23 @@ def start(update, context):
 
 
 def link_checker(update, context):
-    connection = sqlite3.connect('../db/timetables.db')
+    connection = sqlite3.connect('db/timetables.db')
     cursor = connection.cursor()
-    if not cursor.execute("""SELECT "group" FROM users WHERE user_id = ?""",
+    if not cursor.execute("""SELECT "group" FROM users WHERE chat_id = ?""",
                           (update.message.from_user['id'],)).fetchone():
-        update.message.reply_text(
-            'Вашей записи нет в базе данных, используйте /link для подключения вашего аккаунта к системе')
         return False
     return True
 
 
 def link(update, context):
+    send()
     if link_checker(update, context):
         update.message.reply_text('Ваш аккаунт уже привязан к системе!', reply_markup=ReplyKeyboardRemove())
         return ConversationHandler.END
     markup = [['Выйти']]
     key = ReplyKeyboardMarkup(markup, resize_keyboard=True, one_time_keyboard=True)
-    update.message.reply_text('Пожалуйста, введите ваш номер группы', reply_markup=key)
+    update.message.reply_text(
+        'Пожалуйста, введите ваш номер группы\nВНИМАНИЕ: сменить группу после этого вы не сможете', reply_markup=key)
     return 1
 
 
@@ -131,16 +132,16 @@ def linker(update, context):
     if not message.isdigit():
         update.message.reply_text('Вы ввели не номер группы!')
         return 1
-    connection = sqlite3.connect('../db/timetables.db')
+    connection = sqlite3.connect('db/timetables.db')
     cursor = connection.cursor()
     if not cursor.execute("""SELECT * FROM groups WHERE number = ?""", (message,)).fetchone():
         update.message.reply_text('Такой группы не существует!')
         return 1
-    user_id = update.message.from_user['id']
-    if cursor.execute("""SELECT * FROM users WHERE user_id = ?""", (user_id,)).fetchone():
+    chat_id = update.message.chat['id']
+    if cursor.execute("""SELECT * FROM users WHERE chat_id = ?""", (chat_id,)).fetchone():
         update.message.reply_text('Ваш аккаунт уже привязан к системе!', reply_markup=ReplyKeyboardRemove())
         return ConversationHandler.END
-    cursor.execute("""INSERT INTO users VALUES (?, ?)""", (user_id, message))
+    cursor.execute("""INSERT INTO users VALUES (?, ?)""", (chat_id, message))
     connection.commit()
     update.message.reply_text('Вы успешно подключили ваш аккаунт!', reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END

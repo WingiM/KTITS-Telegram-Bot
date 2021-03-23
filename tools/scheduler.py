@@ -1,5 +1,4 @@
 import datetime
-
 import schedule
 from bs4 import BeautifulSoup
 from requests import get
