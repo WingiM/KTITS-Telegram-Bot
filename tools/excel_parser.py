@@ -1,7 +1,28 @@
+import json
+
 import openpyxl
 
-wb = openpyxl.load_workbook("rasp.xlsx")
+wb = openpyxl.load_workbook("../workbooks/rasp1.xlsx")
 sheet_names = wb.sheetnames
+
+LESSONS_DAILY = {
+    1: '8:00-9:30',
+    2: '9:40-11:10',
+    3: '11:50-13:20',
+    4: '13:20-15:10',
+    5: '15:20-16:50',
+    6: '17:00-18:30',
+    7: '18:40-20:10',
+}
+
+LESSONS_SATURDAY = {
+    1: '8:00-9:30',
+    2: '9:40-11:10',
+    3: '11:30-13:00',
+    4: '13:10-14:40',
+    5: '14:50-16:20',
+    6: '16:30-18:00'
+}
 
 
 def parse(start_col="C", end_col="E", sheet_number=0):
@@ -24,7 +45,8 @@ def parse(start_col="C", end_col="E", sheet_number=0):
                         lesson += f"{str(cell.value)} "
                     temp_new_line_str_1 = r"\n"
                     temp_new_line_str_2 = r".\n"
-                    temp_lessons.append(f"{str(lesson_num)} - {lesson.replace('_', '').replace(temp_new_line_str_2, '-').replace(temp_new_line_str_1, '.')}")
+                    temp_lessons.append(
+                        f"{LESSONS_DAILY[lesson_num]} - {lesson.replace('_', '').replace(temp_new_line_str_2, '-').replace(temp_new_line_str_1, '.')}")
                 a += 1
                 lesson_num += 1
             lesson_num = 1
@@ -50,4 +72,6 @@ def main():
 
 
 if __name__ == '__main__':
-    print(main())
+    js = main()
+    with open('test1.json', mode='w', encoding='utf8') as file:
+        json.dump(js, file, ensure_ascii=False)

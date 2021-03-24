@@ -13,9 +13,9 @@ def parse():
     href = schedules.find_all('a')
     for number, link in enumerate(href, start=1):
         response = get(URL + link.get('href').rstrip('/'))
-        with open(f'../workbooks/rasp{number}.xlsx', 'wb') as file:
+        with open(f'workbooks/rasp{number}.xlsx', 'wb') as file:
             file.write(response.content)
-    with open('../db/log.txt', 'a') as file:
+    with open('db/log.txt', 'a') as file:
         file.write(str(datetime.datetime.now()) + '\n')
 
 

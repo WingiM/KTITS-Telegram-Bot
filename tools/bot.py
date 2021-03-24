@@ -1,6 +1,6 @@
 import os
 import sqlite3
-from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Bot
+from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Updater, CommandHandler, ConversationHandler, MessageHandler, Filters
 from dotenv import load_dotenv
 
@@ -114,7 +114,6 @@ def link_checker(update, context):
 
 
 def link(update, context):
-    send()
     if link_checker(update, context):
         update.message.reply_text('Ваш аккаунт уже привязан к системе!', reply_markup=ReplyKeyboardRemove())
         return ConversationHandler.END
@@ -152,8 +151,34 @@ def leave(update, context):
     return ConversationHandler.END
 
 
-def text_processing(update, context):
-    pass
+def get(update, context):
+    if not link_checker(update, context):
+        update.message.reply_text('Ваш аккаунт не привязан к системе! Используйте /link, чтобы привязаться')
+        return ConversationHandler.END
+    markup = [['Понедельник', 'Вторник'], ['Среда', "Четверг"], ["Пятница", "Суббота"], ['Выйти']]
+    key = ReplyKeyboardMarkup(markup, resize_keyboard=True, one_time_keyboard=False)
+    update.message.reply_text('Выберите день недели', reply_markup=key)
+    return 1
+
+
+def get_timetable(update, context):
+    message = update.message.text
+    if message.lower() == 'выйти':
+        return leave(update, context)
+    if message.lower() not in [i.lower() for i in list(WEEKDAYS.keys())]:
+        update.message.reply_text('Это не день недели!')
+        return 1
+    if message.lower() == 'воскресенье':
+        update.message.reply_text('В воскресенье мы не учимся')
+        return 1
+    connection = sqlite3.connect('db/timetables.db')
+    cursor = connection.cursor()
+    weekday = WEEKDAYS[message]
+    group = cursor.execute("""SELECT "group" FROM users WHERE chat_id = ?""", (update.message.from_user['id'], )).fetchone()[0]
+    timetable = cursor.execute("""SELECT schedule FROM default_timetables_students WHERE "group" = ? AND weekday = ?""", (group, weekday)).fetchone()[0]
+    update.message.reply_text(f'Вот и расписание на {message}')
+    update.message.reply_text(f'{timetable}')
+    return 1
 
 
 def main():
@@ -167,7 +192,13 @@ def main():
         },
         fallbacks=[CommandHandler('exit', leave)]
     ))
-    dispatcher.add_handler(MessageHandler(Filters.text, text_processing))
+    dispatcher.add_handler(ConversationHandler(
+        entry_points=[CommandHandler('get', get)],
+        states={
+            1: [MessageHandler(Filters.text, get_timetable)]
+        },
+        fallbacks=[CommandHandler('exit', leave)]
+    ))
     # dispatcher.add_handler(ConversationHandler(
     #     entry_points=[CommandHandler('day', daily_student_timetable_start)],
     #     states={
