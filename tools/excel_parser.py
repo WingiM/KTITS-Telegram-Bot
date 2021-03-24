@@ -24,7 +24,7 @@ def parse(start_col="C", end_col="E", sheet_number=0):
                         lesson += f"{str(cell.value)} "
                     temp_new_line_str_1 = r"\n"
                     temp_new_line_str_2 = r".\n"
-                    temp_lessons.append(f"{str(lesson_num)} - {lesson.replace('_', '').replace(temp_new_line_str_2, '-').replace(temp_new_line_str_1, '.')}")
+                    temp_lessons.append(f"{str(lesson_num)} - {lesson.replace('_', '').replace(temp_new_line_str_2, '-').replace(temp_new_line_str_1, ' - ')}")
                 a += 1
                 lesson_num += 1
             lesson_num = 1
