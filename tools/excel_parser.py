@@ -2,7 +2,7 @@ import json
 
 import openpyxl
 
-wb = openpyxl.load_workbook("../workbooks/rasp1.xlsx")
+wb = openpyxl.load_workbook("../workspace/rasp1.xlsx")
 sheet_names = wb.sheetnames
 
 LESSONS_DAILY = {
@@ -43,17 +43,21 @@ def parse(start_col="C", end_col="E", sheet_number=0):
                         if cell.value is None:
                             break
                         lesson += f"{str(cell.value)} "
-                    temp_new_line_str_1 = r"\n"
-                    temp_new_line_str_2 = r".\n"
-                    temp_lessons.append(
-                        f"{LESSONS_DAILY[lesson_num]} - {lesson.replace('_', '').replace(temp_new_line_str_2, '-').replace(temp_new_line_str_1, '.')}")
+                    temp_new_line_str_1 = "\n"
+                    if a <= 38:
+                        temp_lessons.append(
+                            f"{LESSONS_DAILY[lesson_num]} - {lesson.replace('_', '').replace(temp_new_line_str_1, ' - ')}")
+                    else:
+                        temp_lessons.append(
+                            f"{LESSONS_SATURDAY[lesson_num]} - {lesson.replace('_', '').replace(temp_new_line_str_1, ' - ')}")
                 a += 1
                 lesson_num += 1
             lesson_num = 1
-        temp_var = 6
-        while temp_var <= 36:
-            temp = temp_lessons[temp_var - 6:temp_var]
-            return_dict[temp_var // 5 - 1] = "".join(temp)
+        temp_var = 0
+        print(temp_lessons)
+        while temp_var <= 30:
+            temp = temp_lessons[temp_var:temp_var + 6]
+            return_dict[temp_var // 6] = "".join(temp)
             temp_var += 6
         one_sheet_lessons[group_number] = return_dict
         group_number += 1
