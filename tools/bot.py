@@ -174,8 +174,10 @@ def get_timetable(update, context):
     connection = sqlite3.connect('db/timetables.db')
     cursor = connection.cursor()
     weekday = WEEKDAYS[message]
-    group = cursor.execute("""SELECT "group" FROM users WHERE chat_id = ?""", (update.message.from_user['id'], )).fetchone()[0]
-    timetable = cursor.execute("""SELECT schedule FROM default_timetables_students WHERE "group" = ? AND weekday = ?""", (group, weekday)).fetchone()[0]
+    group = cursor.execute("""SELECT "group" FROM users 
+    WHERE chat_id = ?""", (update.message.from_user['id'],)).fetchone()[0]
+    timetable = cursor.execute("""SELECT schedule FROM default_timetables_students WHERE "group" = ? AND weekday = ?""",
+                               (group, weekday)).fetchone()[0]
     update.message.reply_text(f'Вот и расписание на {message}')
     update.message.reply_text(f'{timetable}')
     return 1
@@ -199,21 +201,6 @@ def main():
         },
         fallbacks=[CommandHandler('exit', leave)]
     ))
-    # dispatcher.add_handler(ConversationHandler(
-    #     entry_points=[CommandHandler('day', daily_student_timetable_start)],
-    #     states={
-    #         1: [MessageHandler(Filters.text, get_daily_student_timetable)]
-    #     },
-    #     fallbacks=[]
-    # ))
-    # dispatcher.add_handler(ConversationHandler(
-    #     entry_points=[CommandHandler('dayt', daily_teacher_timetable_start)],
-    #     states={
-    #         1: [MessageHandler(Filters.text, get_daily_teacher_timetable)]
-    #     },
-    #     fallbacks=[]
-    # ))
-
     print('Bot successfully started')
     updater.start_polling()
     updater.idle()
