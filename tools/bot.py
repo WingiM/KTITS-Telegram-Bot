@@ -22,88 +22,6 @@ def start(update, context):
         update.message.reply_text('Ваш аккаунт не привязан к системе! Используйте /link, чтобы привязаться')
 
 
-#
-# def daily_student_timetable_start(update, context):
-#     markup = [['Назад']]
-#     key = ReplyKeyboardMarkup(markup, resize_keyboard=True, one_time_keyboard=True)
-#     update.message.reply_text(
-#         'Введите номер группы и день недели (120 Понедельник)\n\n'
-#         'Либо номер группы и дату, для получения расписания с учетом временных изменений (120 23 03 2021)',
-#         reply_markup=key)
-#     return 1
-#
-#
-# def get_daily_student_timetable(update, context):
-#     try:
-#         message = update.message.text
-#         if message == 'Назад':
-#             update.message.reply_text('Возвращаемся назад', reply_markup=ReplyKeyboardRemove())
-#             return ConversationHandler.END
-#         connection = sqlite3.connect('db/timetables.db')
-#         cursor = connection.cursor()
-#         message = message.split()
-#         if len(message) == 2:
-#             group = int(message[0])
-#             weekday = WEEKDAYS[message[1].capitalize()]
-#             schedule = cursor.execute("""SELECT schedule FROM default_timetables_students
-#                                                     WHERE "group" = ? AND weekday = ?""", (group, weekday)).fetchone()
-#             update.message.reply_text(schedule[0], reply_markup=ReplyKeyboardRemove())
-#             return ConversationHandler.END
-#         elif len(message) == 4:
-#             group, day, month, year = map(int, message)
-#             date = datetime.date(year, month, day)
-#             schedule = cursor.execute("""SELECT schedule FROM temp_timetables_students
-#                                         WHERE "group" = ? AND date = ?""", (group, date)).fetchone()
-#             update.message.reply_text(schedule, reply_markup=ReplyKeyboardRemove())
-#             return ConversationHandler.END
-#         raise KeyError
-#
-#     except (KeyError, ValueError):
-#         update.message.reply_text('Некорректный запрос', reply_markup=ReplyKeyboardRemove())
-#         return ConversationHandler.END
-#
-#
-# def daily_teacher_timetable_start(update, context):
-#     markup = [['Назад']]
-#     key = ReplyKeyboardMarkup(markup, resize_keyboard=True, one_time_keyboard=True)
-#     update.message.reply_text(
-#         'Введите вашу фамилию и инициалы и день недели (Садыкова Н.А. Понедельник)\n\n'
-#         'Либо фамилию, инициалы и дату, для получения расписания '
-#         'с учетом временных изменений (Садыкова Н.А. 23 03 2021)',
-#         reply_markup=key)
-#     return 1
-#
-#
-# def get_daily_teacher_timetable(update, context):  # TODO: доделать
-#     try:
-#         message = update.message.text
-#         if message == 'Назад':
-#             update.message.reply_text('Возвращаемся назад', reply_markup=ReplyKeyboardRemove())
-#             return ConversationHandler.END
-#         connection = sqlite3.connect('db/timetables.db')
-#         cursor = connection.cursor()
-#         message = message.split()
-#         if len(message) == 2:
-#             group = int(message[0])
-#             weekday = WEEKDAYS[message[1].capitalize()]
-#             schedule = cursor.execute("""SELECT schedule FROM default_timetables_students
-#                                                     WHERE "group" = ? AND weekday = ?""", (group, weekday)).fetchone()
-#             update.message.reply_text(schedule[0], reply_markup=ReplyKeyboardRemove())
-#             return ConversationHandler.END
-#         elif len(message) == 4:
-#             group, day, month, year = map(int, message)
-#             date = datetime.date(year, month, day)
-#             schedule = cursor.execute("""SELECT schedule FROM temp_timetables_students
-#                                         WHERE "group" = ? AND date = ?""", (group, date)).fetchone()
-#             update.message.reply_text(schedule, reply_markup=ReplyKeyboardRemove())
-#             return ConversationHandler.END
-#         raise KeyError
-#
-#     except (KeyError, ValueError):
-#         update.message.reply_text('Некорректный запрос', reply_markup=ReplyKeyboardRemove())
-#         return ConversationHandler.END
-
-
 def link_checker(update, context):
     connection = sqlite3.connect('db/timetables.db')
     cursor = connection.cursor()
@@ -143,6 +61,7 @@ def linker(update, context):
     cursor.execute("""INSERT INTO users VALUES (?, ?)""", (chat_id, message))
     connection.commit()
     update.message.reply_text('Вы успешно подключили ваш аккаунт!', reply_markup=ReplyKeyboardRemove())
+    update.message.reply_text('Теперь вы можете использовать команду /get для того, чтобы получить расписание')
     return ConversationHandler.END
 
 
@@ -155,7 +74,7 @@ def get(update, context):
     if not link_checker(update, context):
         update.message.reply_text('Ваш аккаунт не привязан к системе! Используйте /link, чтобы привязаться')
         return ConversationHandler.END
-    markup = [['Понедельник', 'Вторник'], ['Среда', "Четверг"], ["Пятница", "Суббота"], ['Выйти']]
+    markup = [['Понедельник', 'Четверг'], ['Вторник', "Пятница"], ["Среда", "Суббота"], ['Выйти']]
     key = ReplyKeyboardMarkup(markup, resize_keyboard=True, one_time_keyboard=False)
     update.message.reply_text('Выберите день недели', reply_markup=key)
     return 1

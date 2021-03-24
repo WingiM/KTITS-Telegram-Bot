@@ -1,5 +1,3 @@
-import json
-
 import openpyxl
 
 LESSONS_DAILY = {
@@ -43,12 +41,12 @@ def parse_groups(workbook, workbook_number) -> dict:
                     cells = sheet[f'{chr(start_col)}{rows}:{chr(end_col)}{rows}']
                     for cell_obj in cells:
                         if weekday == 5:
-                            string = LESSONS_SATURDAY[pair] + ' - '
+                            string = '•' + LESSONS_SATURDAY[pair] + ' - '
                         else:
-                            string = LESSONS_DAILY[pair] + ' - '
+                            string = '•' + LESSONS_DAILY[pair] + ' - '
                         string += ' - '.join([str(cell.value).replace('\n', '|').replace(' /', '/') for cell in cell_obj])
                         string = string.replace(' - None', '')
-                        groups[group_number][weekday] += string + '\n'
+                        groups[group_number][weekday] += string + '\n\n'
                         # print(string)
                     pair += 1
                 # print()
@@ -61,10 +59,9 @@ def parse_groups(workbook, workbook_number) -> dict:
 def main():
     groups = {}
     for i in range(1, 5):
-        workbook = openpyxl.load_workbook(f'../workbooks/rasp{i}.xlsx')
+        workbook = openpyxl.load_workbook(f'workbooks/rasp{i}.xlsx')
         groups.update(parse_groups(workbook, i))
-    with open('test1.json', mode='w', encoding='utf8') as file:
-        json.dump(groups, file, ensure_ascii=False)
+    return groups
 
 
 if __name__ == '__main__':

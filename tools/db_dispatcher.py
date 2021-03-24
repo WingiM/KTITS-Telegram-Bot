@@ -7,22 +7,20 @@ from telegram import Bot
 load_dotenv('.env')
 
 
-def set_default_timetables(file):
+def set_default_timetables(schedules:dict):
     """Устанавливает стандартные расписания по дням недели"""
-    file = json.load(file)
-    groups = file['groups']
     connection = sqlite3.connect('db/timetables.db')
     cur = connection.cursor()
+    cur.execute("""DELETE FROM groups""")
 
-    for group, weekdays in groups.items():
-        for weekday, schedule in weekdays.items():
-            if not cur.execute("""SELECT * FROM default_timetables_students WHERE "group" = ? AND weekday = ?""",
-                               (group, weekday)).fetchall():
-                cur.execute("""INSERT INTO default_timetables_students("group", weekday, schedule) VALUES (?, ?, ?)""",
-                            (group, weekday, schedule))
-                continue
-            cur.execute("""UPDATE default_timetables_students SET schedule = ? WHERE weekday = ? AND "group" = ?""",
-                        (schedule, weekday, group))
+    for group, weekday_schedules in schedules.items():
+        cur.execute("""INSERT INTO groups VALUES (?)""", (group, ))
+        for weekday, schedule in weekday_schedules.items():
+            if cur.execute("""SELECT * FROM default_timetables_students WHERE weekday = ? AND "group" = ?""", (weekday, group)).fetchone():
+                cur.execute("""UPDATE default_timetables_students SET schedule = ? 
+                WHERE weekday = ? AND "group" = ?""", (schedule, weekday, group))
+            else:
+                cur.execute("""INSERT INTO default_timetables_students("group", weekday, schedule) VALUES (?, ?, ?)""", (group, weekday, schedule))
     connection.commit()
 
 

@@ -2,6 +2,8 @@ import datetime
 import schedule
 from bs4 import BeautifulSoup
 from requests import get
+from tools import excel
+from tools.db_dispatcher import set_default_timetables
 
 URL = 'https://www.mck-ktits.ru/'
 
@@ -18,10 +20,13 @@ def parse():
     with open('db/log.txt', 'a') as file:
         file.write(str(datetime.datetime.now()) + '\n')
 
+    groups_schedule = excel.main()
+    set_default_timetables(groups_schedule)
+
 
 def main():
     print('URL parser successfully started')
-    schedule.every(1).day.at("00:00").do(parse)
+    schedule.every(1).day.at("04:00").do(parse)
 
     while True:
         schedule.run_pending()
