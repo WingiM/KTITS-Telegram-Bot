@@ -24,6 +24,22 @@ def set_default_timetables(schedules:dict):
     connection.commit()
 
 
+def set_default_timetables_teachers(schedules:dict):
+    connection = sqlite3.connect('db/timetables.db')
+    cur = connection.cursor()
+    cur.execute("""DELETE FROM teachers""")
+
+    for name, weekday_schedules in schedules.items():
+        cur.execute("""INSERT INTO teachers VALUES (?)""", (name, ))
+        for weekday, schedule in weekday_schedules.items():
+            schedule = '\n'.join(sorted(schedule, key=lambda x: int(x.split(':')[0][1:])))
+            if cur.execute("""SELECT * FROM default_timetables_teachers WHERE weekday = ? AND name = ?""", (weekday, name)).fetchone():
+                cur.execute("""UPDATE default_timetables_teachers SET schedule = ? WHERE weekday = ? AND name = ?""", (schedule, weekday, name))
+            else:
+                cur.execute("""INSERT INTO default_timetables_teachers(name, weekday, schedule) VALUES (?, ?, ?)""", (name, weekday, schedule))
+    connection.commit()
+
+
 def mailing(text):
     connection = sqlite3.connect('db/timetables.db')
     cursor = connection.cursor()
