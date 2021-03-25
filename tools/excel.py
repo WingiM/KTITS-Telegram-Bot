@@ -44,19 +44,15 @@ def parse_teachers(cells, pair, weekday, group):
             t_pairs[teacher.strip()] = t_pairs.get(teacher, {})
             t_pairs[teacher.strip()][weekday] = []
             if len(pairs) == len(teachers.split('\n')) > 1:
-                if weekday == 5:
-                    t_pairs[teacher.strip()][weekday].append('•' + LESSONS_SATURDAY[pair] + ' - Группа ' + str(
-                        group) + ' - Аудитория ' + '/'.join(str(cells[0][0].value).split('\n')) + ' - ' + pairs[c].strip())
-                else:
-                    t_pairs[teacher.strip()][weekday].append('•' + LESSONS_DAILY[pair] + ' - Группа ' + str(
-                        group) + ' - Аудитория ' + '/'.join(str(cells[0][0].value).split('\n')) + ' - ' + pairs[c].strip())
+                t_pairs[teacher.strip()][weekday].append(
+                    '•' + (LESSONS_DAILY[pair] if weekday != 5 else LESSONS_SATURDAY[pair]) + ' - Группа ' + str(
+                        group) + ' - Аудитория ' + '/'.join(str(cells[0][0].value).split('\n')) + ' - ' + pairs[
+                        c].strip() + (' - До пересменки' if c == 0 else ' - После пересменки'))
             else:
-                if weekday == 5:
-                    t_pairs[teacher.strip()][weekday].append('•' + LESSONS_SATURDAY[pair] + ' - Группа ' + str(
-                        group) + ' - Аудитория ' + '/'.join(str(cells[0][0].value).split('\n')) + ' - ' + pairs[0].strip())
-                else:
-                    t_pairs[teacher.strip()][weekday].append('•' + LESSONS_DAILY[pair] + ' - Группа ' + str(
-                        group) + ' - Аудитория ' + '/'.join(str(cells[0][0].value).split('\n')) + ' - ' + pairs[0].strip())
+                t_pairs[teacher.strip()][weekday].append(
+                    '•' + (LESSONS_DAILY[pair] if weekday != 5 else LESSONS_SATURDAY[pair]) + ' - Группа ' + str(
+                        group) + ' - Аудитория ' + '/'.join(str(cells[0][0].value).split('\n')) + ' - ' + pairs[
+                        0].strip())
         c += 1
     return t_pairs
 
@@ -87,6 +83,8 @@ def parse_groups(workbook, workbook_number):
                         teachers[name][weekday] = teachers[name].get(weekday, [])
                         for p in t_pairs[name][weekday]:
                             teachers[name][weekday].append(p + '\n')
+                        # if name == 'Петрова А.Р.':
+                        #     print(teachers['Петрова А.Р.'])
                     pair += 1
                 start_row += 6
             start_col = end_col + 1
@@ -99,8 +97,10 @@ def main():
     teachers = {}
     for i in range(1, 5):
         workbook = openpyxl.load_workbook(f'workbooks/rasp{i}.xlsx')
-        group, teacher = parse_groups(workbook, i)
-        groups.update(group)
-        teachers.update(teacher)
+        group_dict, teacher_dict = parse_groups(workbook, i)
+        groups.update(group_dict)
+        for teacher in teacher_dict:
+            for weekday in teacher_dict[teacher]:
+                teachers[teacher] = teachers.get(teacher, {})
+                teachers[teacher][weekday] = teachers[teacher].get(weekday, []) + teacher_dict[teacher][weekday]
     return groups, teachers
-
