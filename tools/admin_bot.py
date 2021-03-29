@@ -42,7 +42,8 @@ def message_to_group(update, context):
     cursor = connection.cursor()
     users = cursor.execute("""SELECT chat_id FROM users WHERE "group" = ? """, (current_group, )).fetchall()
     for i in users:
-        bot.sendMessage(chat_id=i[0], text=message)
+        bot.sendMessage(chat_id=i[0], text="Учебная часть:\n" + message)
+    update.message.reply_text(f'Успешно отправили сообщение группе {context.user_data["to_group"]}', reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
 
 
@@ -51,8 +52,7 @@ def check_group(group):
     cursor = connection.cursor()
     if cursor.execute(""" SELECT * FROM groups WHERE number = ?""", (group,)).fetchone():
         return True
-    else:
-        return False
+    return False
 
 
 def leave(update, context):
