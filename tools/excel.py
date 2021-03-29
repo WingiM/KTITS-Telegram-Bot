@@ -32,6 +32,28 @@ def groups_parse(cells, pair, weekday):
     return string
 
 
+def name_to_standard(name) -> str:
+    if not name or all([i == '_' for i in name]):
+        return ''
+    name = name.split()
+    if len(name) == 2:
+        surname = name[0]
+        first_name = '.'.join([i for i in name[1] if i.isupper()]) + '.'
+        return surname + ' ' + first_name
+    elif len(name) == 1:
+        index = None
+        surname, c = name[0], 1
+        for i in surname[1:]:
+            if i.isupper():
+                index = c
+                break
+            c += 1
+        if index:
+            first_name = '.'.join([i for i in surname[index:] if i.isupper()]) + '.'
+            return surname[:index] + ' ' + first_name
+        return ''
+
+
 def parse_teachers(cells, pair, weekday, group):
     t_pairs = {}
     teachers = cells[0][2].value
@@ -41,12 +63,13 @@ def parse_teachers(cells, pair, weekday, group):
     for teacher_pairs in teachers.split('\n'):
         pairs = cells[0][1].value.split('\n')
         for teacher in (teacher_pairs.split('/') if '/' in teacher_pairs else teacher_pairs.split('\\')):
+            teacher = name_to_standard(teacher.strip())
             t_pairs[teacher.strip()] = t_pairs.get(teacher, {})
             t_pairs[teacher.strip()][weekday] = []
             if len(pairs) == len(teachers.split('\n')) > 1:
                 t_pairs[teacher.strip()][weekday].append(
                     '•' + (LESSONS_DAILY[pair] if weekday != 5 else LESSONS_SATURDAY[pair]) + ' - Группа ' + str(
-                        group) + ' - Аудитория ' + '/'.join(str(cells[0][0].value).split('\n')) + ' - ' + pairs[
+                        group) + ' - Аудитория ' + '|'.join(str(cells[0][0].value).split('\n')) + ' - ' + pairs[
                         c].strip() + (' - До пересменки' if c == 0 else ' - После пересменки'))
             else:
                 t_pairs[teacher.strip()][weekday].append(
@@ -65,7 +88,6 @@ def parse_groups(workbook, workbook_number):
         start_col, end_col = ord('C'), ord('E')
         sheet = workbook[sheet_names[sheet_number]]
         for group_number in sheet_names[sheet_number].split(','):  # Цикл про группам
-            # print('\n\n' + group_number + '\n\n')
             groups[group_number] = {}
             if workbook_number in (1, 2):
                 start_row = 8 if sheet_number == 0 else 7
@@ -83,8 +105,6 @@ def parse_groups(workbook, workbook_number):
                         teachers[name][weekday] = teachers[name].get(weekday, [])
                         for p in t_pairs[name][weekday]:
                             teachers[name][weekday].append(p + '\n')
-                        # if name == 'Петрова А.Р.':
-                        #     print(teachers['Петрова А.Р.'])
                     pair += 1
                 start_row += 6
             start_col = end_col + 1
@@ -104,3 +124,6 @@ def main():
                 teachers[teacher] = teachers.get(teacher, {})
                 teachers[teacher][weekday] = teachers[teacher].get(weekday, []) + teacher_dict[teacher][weekday]
     return groups, teachers
+
+
+print(main())

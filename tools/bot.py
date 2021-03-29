@@ -170,8 +170,8 @@ def get_timetable_teacher(update, context):
         WHERE chat_id = ?""", (update.message.from_user['id'],)).fetchone()[0]
     try:
         timetable = \
-        cursor.execute("""SELECT schedule FROM default_timetables_teachers WHERE name = ? AND weekday = ?""",
-                       (group, weekday)).fetchone()[0]
+            cursor.execute("""SELECT schedule FROM default_timetables_teachers WHERE name = ? AND weekday = ?""",
+                           (group, weekday)).fetchone()[0]
     except TypeError:
         update.message.reply_text('Повезло! У вас нет пар в этот день')
         return 1
