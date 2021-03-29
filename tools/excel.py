@@ -124,6 +124,3 @@ def main():
                 teachers[teacher] = teachers.get(teacher, {})
                 teachers[teacher][weekday] = teachers[teacher].get(weekday, []) + teacher_dict[teacher][weekday]
     return groups, teachers
-
-
-print(main())

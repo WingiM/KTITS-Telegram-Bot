@@ -17,6 +17,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\tools\admin_bot.py">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\tools\url_parser.py">
           <value>
             <Attribute>

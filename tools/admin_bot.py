@@ -25,11 +25,11 @@ def select_group(update, context):
         return leave(update, context)
     if not check_group(message):
         update.message.reply_text("Вы ввели неправильный номер группы")
-        return ConversationHandler.END
+        return 1
     markup = [['Выйти']]
     key = ReplyKeyboardMarkup(markup, resize_keyboard=True, one_time_keyboard=True)
     update.message.reply_text("Введите сообщение группе", reply_markup=key)
-    context.user_data['locality'] = message
+    context.user_data['to_group'] = message
     return 2
 
 
@@ -37,7 +37,7 @@ def message_to_group(update, context):
     message = update.message.text
     if message.lower() == 'выйти':
         return leave(update, context)
-    current_group = context.user_data['locality']
+    current_group = context.user_data['to_group']
     connection = sqlite3.connect('db/timetables.db')
     cursor = connection.cursor()
     users = cursor.execute("""SELECT chat_id FROM users WHERE "group" = ? """, (current_group, )).fetchall()
@@ -65,10 +65,10 @@ def main():
     dispatcher = updater.dispatcher
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(ConversationHandler(
-        entry_points=[CommandHandler('message_send', message_send)],
+        entry_points=[CommandHandler('send', message_send)],
         states={
-            1: [MessageHandler(Filters.text, select_group, pass_user_data=True, pass_chat_data=True)],
-            2: [MessageHandler(Filters.text, message_to_group, pass_user_data=True, pass_chat_data=True)]
+            1: [MessageHandler(Filters.text, select_group, pass_user_data=True)],
+            2: [MessageHandler(Filters.text, message_to_group, pass_user_data=True)]
         },
         fallbacks=[CommandHandler('exit', leave)]
     ))

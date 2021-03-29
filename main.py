@@ -1,5 +1,5 @@
 from multiprocessing import Process
-from tools import scheduler, bot
+from tools import scheduler, bot, admin_bot
 
 if __name__ == '__main__':
     p1 = Process(target=bot.main)
