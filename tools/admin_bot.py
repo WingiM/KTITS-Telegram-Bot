@@ -14,11 +14,9 @@ def start(update, context):
 
 
 def link_checker(update, context):
-    print(os.getcwd())
     connection = sqlite3.connect('db/timetables.db')
     cursor = connection.cursor()
     admins = cursor.execute("""SELECT * FROM users WHERE chat_id = ?""", (update.message.from_user['id'], )).fetchall()
-    print(admins)
     if not cursor.execute("""SELECT chat_id FROM admin_users WHERE chat_id = ?""", (update.message.from_user["id"], )).fetchone():
         return False
     return True
