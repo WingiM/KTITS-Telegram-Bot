@@ -9,9 +9,49 @@ bot = Bot(os.getenv("BOT_TOKEN"))
 
 def start(update, context):
     update.message.reply_text('Здравствуйте!')
+    if not link_checker(update, context):
+        update.message.reply_text('Для привязки аккаунта используйте /link')
+
+
+def link_checker(update, context):
+    print(os.getcwd())
+    connection = sqlite3.connect('db/timetables.db')
+    cursor = connection.cursor()
+    admins = cursor.execute("""SELECT * FROM users WHERE chat_id = ?""", (update.message.from_user['id'], )).fetchall()
+    print(admins)
+    if not cursor.execute("""SELECT chat_id FROM admin_users WHERE chat_id = ?""", (update.message.from_user["id"], )).fetchone():
+        return False
+    return True
+
+
+def link(update, context):
+    if link_checker(update, context):
+        update.message.reply_text('Ваш аккаунт уже привязан')
+        return ConversationHandler.END
+    markup = [['Выйти']]
+    key = ReplyKeyboardMarkup(markup, resize_keyboard=True)
+    update.message.reply_text('Пожалуйста, введите пароль учебной части', reply_markup=key)
+    return 1
+
+
+def linker(update, context):
+    message = update.message.text
+    if message.lower() == 'выйти':
+        return leave(update, context)
+    if message != os.getenv("ADMIN_PASSWORD"):
+        update.message.reply_text('Пароль неверный')
+        return 1
+    connection = sqlite3.connect('db/timetables.db')
+    cursor = connection.cursor()
+    cursor.execute("""INSERT INTO admin_users VALUES(?)""", (update.message.from_user['id'], ))
+    update.message.reply_text('Успешно привязали аккаунт.\nИспользуйте /send для отправки сообщений группам')
+    return ConversationHandler.END
 
 
 def message_send(update, context):
+    if not link_checker(update, context):
+        update.message.reply_text('Ваш аккаунт не привязан')
+        return ConversationHandler.END
     markup = [['Выйти']]
     key = ReplyKeyboardMarkup(markup, resize_keyboard=True, one_time_keyboard=True)
     update.message.reply_text("Введите номер группы, которой вы хотите отпраить сообщение\n"
@@ -64,6 +104,13 @@ def main():
     updater = Updater(os.getenv("ADMIN_BOT_TOKEN"), use_context=True)
     dispatcher = updater.dispatcher
     dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(ConversationHandler(
+        entry_points=[CommandHandler('link', link)],
+        states={
+            1: [MessageHandler(Filters.text, linker)]
+        },
+        fallbacks=[]
+    ))
     dispatcher.add_handler(ConversationHandler(
         entry_points=[CommandHandler('send', message_send)],
         states={
