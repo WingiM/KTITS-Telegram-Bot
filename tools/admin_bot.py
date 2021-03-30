@@ -42,7 +42,8 @@ def linker(update, context):
     connection = sqlite3.connect('db/timetables.db')
     cursor = connection.cursor()
     cursor.execute("""INSERT INTO admin_users VALUES(?)""", (update.message.from_user['id'], ))
-    update.message.reply_text('Успешно привязали аккаунт.\nИспользуйте /send для отправки сообщений группам')
+    connection.commit()
+    update.message.reply_text('Успешно привязали аккаунт.\nИспользуйте /send для отправки сообщений группам', reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
 
 
@@ -117,6 +118,6 @@ def main():
         },
         fallbacks=[CommandHandler('exit', leave)]
     ))
-
+    print('Admin bot successfully started')
     updater.start_polling()
     updater.idle()
