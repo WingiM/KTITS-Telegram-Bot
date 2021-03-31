@@ -1,6 +1,6 @@
 import os
 import sqlite3
-from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Bot
+from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Bot, Update, ChatPhoto
 from telegram.ext import Updater, CommandHandler, ConversationHandler, MessageHandler, Filters
 
 
@@ -74,17 +74,26 @@ def select_group(update, context):
     return 2
 
 
-def message_to_group(update, context):
+def message_to_group(update: Update, context):
+    file = update.message.photo[-1]
+    newFile = Bot(os.getenv("ADMIN_BOT_TOKEN")).get_file(file_id=file.file_id)
+    newFile.download(custom_path="image_temp/file.png")
+    update.message.reply_photo(file)
     message = update.message.text
-    if message.lower() == 'выйти':
-        return leave(update, context)
+    if message is not None:
+        if message.lower() == 'выйти':
+            return leave(update, context)
     current_groups = context.user_data['to_group']
     connection = sqlite3.connect('db/timetables.db')
     cursor = connection.cursor()
     for group in current_groups:
         users = cursor.execute("""SELECT chat_id FROM users WHERE "group" = ? """, (group, )).fetchall()
         for i in users:
-            bot.sendMessage(chat_id=i[0], text="Учебная часть:\n" + message)
+            if message is not None:
+                bot.sendMessage(chat_id=i[0], text="Учебная часть:\n" + message)
+            if file is not None:
+                bot.sendMessage(chat_id=i[0], text="Учебная часть:\n")
+                bot.sendPhoto(chat_id=i[0], photo=open("image_temp/file.png", 'rb'))
         update.message.reply_text(f'Успешно отправили сообщение группе {group}', reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
 
@@ -117,7 +126,7 @@ def main():
         entry_points=[CommandHandler('send', message_send)],
         states={
             1: [MessageHandler(Filters.text, select_group, pass_user_data=True)],
-            2: [MessageHandler(Filters.text, message_to_group, pass_user_data=True)]
+            2: [MessageHandler(Filters.text | Filters.photo | Filters.document, message_to_group, pass_user_data=True)]
         },
         fallbacks=[CommandHandler('exit', leave)]
     ))
