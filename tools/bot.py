@@ -47,7 +47,7 @@ def link(update, context):
     markup = [['Выйти']]
     key = ReplyKeyboardMarkup(markup, resize_keyboard=True, one_time_keyboard=True)
     update.message.reply_text(
-        'Пожалуйста, введите ваш номер группы\nВНИМАНИЕ: сменить группу после этого вы не сможете', reply_markup=key)
+        'Пожалуйста, введите ваш номер группы', reply_markup=key)
     return 1
 
 

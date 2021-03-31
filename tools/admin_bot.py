@@ -121,6 +121,6 @@ def main():
         },
         fallbacks=[CommandHandler('exit', leave)]
     ))
-
+    print('Admin bot successfully started')
     updater.start_polling()
     updater.idle()
