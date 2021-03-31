@@ -42,7 +42,8 @@ def linker(update, context):
     connection = sqlite3.connect('db/timetables.db')
     cursor = connection.cursor()
     cursor.execute("""INSERT INTO admin_users VALUES(?)""", (update.message.from_user['id'], ))
-    update.message.reply_text('Успешно привязали аккаунт.\nИспользуйте /send для отправки сообщений группам')
+    connection.commit()
+    update.message.reply_text('Успешно привязали аккаунт.\nИспользуйте /send для отправки сообщений группам', reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
 
 
@@ -52,8 +53,8 @@ def message_send(update, context):
         return ConversationHandler.END
     markup = [['Выйти']]
     key = ReplyKeyboardMarkup(markup, resize_keyboard=True, one_time_keyboard=True)
-    update.message.reply_text("Введите номер группы, которой вы хотите отпраить сообщение\n"
-                              "Например: 120", reply_markup=key)
+    update.message.reply_text("Введите номер группы или несколько групп(через пробел), которой вы хотите отпраить сообщение\n"
+                              "Например: 120 или 120 102 130", reply_markup=key)
     return 1
 
 
@@ -61,13 +62,15 @@ def select_group(update, context):
     message = update.message.text
     if message.lower() == 'выйти':
         return leave(update, context)
-    if not check_group(message):
-        update.message.reply_text("Вы ввели неправильный номер группы")
-        return 1
+    groups = set(message.split(" "))
+    for i in groups:
+        if not check_group(i):
+            update.message.reply_text("Вы ввели неправильный номер группы")
+            return 1
+    context.user_data['to_group'] = groups
     markup = [['Выйти']]
     key = ReplyKeyboardMarkup(markup, resize_keyboard=True, one_time_keyboard=True)
     update.message.reply_text("Введите сообщение группе", reply_markup=key)
-    context.user_data['to_group'] = message
     return 2
 
 
@@ -75,13 +78,14 @@ def message_to_group(update, context):
     message = update.message.text
     if message.lower() == 'выйти':
         return leave(update, context)
-    current_group = context.user_data['to_group']
+    current_groups = context.user_data['to_group']
     connection = sqlite3.connect('db/timetables.db')
     cursor = connection.cursor()
-    users = cursor.execute("""SELECT chat_id FROM users WHERE "group" = ? """, (current_group, )).fetchall()
-    for i in users:
-        bot.sendMessage(chat_id=i[0], text="Учебная часть:\n" + message)
-    update.message.reply_text(f'Успешно отправили сообщение группе {context.user_data["to_group"]}', reply_markup=ReplyKeyboardRemove())
+    for group in current_groups:
+        users = cursor.execute("""SELECT chat_id FROM users WHERE "group" = ? """, (group, )).fetchall()
+        for i in users:
+            bot.sendMessage(chat_id=i[0], text="Учебная часть:\n" + message)
+        update.message.reply_text(f'Успешно отправили сообщение группе {group}', reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
 
 
