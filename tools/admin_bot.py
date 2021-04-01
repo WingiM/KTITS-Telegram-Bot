@@ -80,7 +80,6 @@ def message_to_group(update: Update, context):
     if message and message.lower() == 'выйти':
         return leave(update, context)
     try:
-        print(len(update.message.photo))
         file = update.message.photo[-1]
         newFile = Bot(os.getenv("ADMIN_BOT_TOKEN")).get_file(file_id=file.file_id)
         newFile.download(custom_path="image_temp/file.png")
@@ -95,7 +94,8 @@ def message_to_group(update: Update, context):
         for user in users:
             if photo_passed:
                 bot.sendPhoto(chat_id=user[0], photo=open("image_temp/file.png", 'rb'),
-                              caption=("Учебная часть:\n" + update.message.caption) if update.message.caption else None)
+                              caption=("Учебная часть:\n" + update.message.caption)
+                              if update.message.caption is not None else None)
             else:
                 bot.sendMessage(chat_id=user[0], text="Учебная часть:\n" + message)
         update.message.reply_text(f'Успешно отправили сообщение группе {group}', reply_markup=ReplyKeyboardRemove())
