@@ -141,7 +141,7 @@ def send_message_to_course(update: Update, context):
     current_course = context.user_data['to_course']
     connection = sqlite3.connect('db/timetables.db')
     cursor = connection.cursor()
-    users = cursor.execute("""SELECT chat_id FROM users WHERE "group" LIKE ? """, (str(current_course) + "%", ))
+    users = cursor.execute("""SELECT chat_id FROM users WHERE "group" LIKE ? """, (current_course + "%", ))
     for user in users:
         bot.sendMessage(chat_id=user[0], text="Учебная часть:\n" + message)
 
@@ -158,7 +158,7 @@ def select_course(update: Update, context):
     if int(course[0]) not in range(1, 5):
         update.message.reply_text("Вы ввели неправильный номер курса!")
         return ConversationHandler.END
-    context.user_data['to_course'] = int(course[0])
+    context.user_data['to_course'] = course[0]
     markup = [['Выйти']]
     key = ReplyKeyboardMarkup(markup, resize_keyboard=True, one_time_keyboard=True)
     update.message.reply_text("Введите сообщение курсу", reply_markup=key)
