@@ -130,7 +130,7 @@ def main(temp: bool = False):
     temp_dates = None
     for i in range(1, 5):
         workbook = openpyxl.load_workbook(
-            f'../workbooks/rasp{i}.xlsx' if not temp else f'../workbooks/temp_rasp{i}.xlsx')
+            f'workbooks/rasp{i}.xlsx' if not temp else f'workbooks/temp_rasp{i}.xlsx')
         if temp and i == 1:
             dates = get_temp_timetable_dates(workbook)
             dates = list(map(lambda x: datetime.date(*map(int, x[::-1])), dates))

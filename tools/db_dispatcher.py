@@ -4,12 +4,11 @@ import sqlite3
 from dotenv import load_dotenv
 from telegram import Bot
 
-load_dotenv('../.env')
+load_dotenv('.env')
 
 
 def set_default_timetables(schedules: dict):
-    """Устанавливает стандартные расписания по дням недели"""
-    connection = sqlite3.connect('../db/timetables.db')
+    connection = sqlite3.connect('db/timetables.db')
     cur = connection.cursor()
     cur.execute("""DELETE FROM groups""")
 
@@ -27,7 +26,7 @@ def set_default_timetables(schedules: dict):
 
 
 def set_default_timetables_teachers(schedules: dict):
-    connection = sqlite3.connect('../db/timetables.db')
+    connection = sqlite3.connect('db/timetables.db')
     cur = connection.cursor()
     cur.execute("""DELETE FROM teachers""")
 
@@ -46,7 +45,7 @@ def set_default_timetables_teachers(schedules: dict):
 
 
 def check_temporary_timetables():
-    connection = sqlite3.connect('../db/timetables.db')
+    connection = sqlite3.connect('db/timetables.db')
     cur = connection.cursor()
     dates = cur.execute("""SELECT DISTINCT date FROM temporary_timetables_students""").fetchall()
     closest_date = max(list(map(lambda x: datetime.date(*map(int, x[0].split('-'))), dates)))
@@ -57,7 +56,7 @@ def check_temporary_timetables():
 
 
 def set_temporary_timetables_students(schedules: dict, dates: list):
-    connection = sqlite3.connect('../db/timetables.db')
+    connection = sqlite3.connect('db/timetables.db')
     cur = connection.cursor()
 
     for group, weekday_schedules in schedules.items():
@@ -65,17 +64,17 @@ def set_temporary_timetables_students(schedules: dict, dates: list):
             if cur.execute("""SELECT * FROM temporary_timetables_students WHERE weekday = ? AND "group" = ?""",
                            (weekday, group)).fetchone():
                 cur.execute(
-                    """UPDATE temporary_timetables_students SET schedule = ?, date = ? WHERE weekday = ? AND "group" = ?""",
-                    (schedule, dates[weekday], weekday, group))
+                    """UPDATE temporary_timetables_students SET schedule = ?, date = ? 
+                    WHERE weekday = ? AND "group" = ?""", (schedule, dates[weekday], weekday, group))
             else:
                 cur.execute(
-                    """INSERT INTO temporary_timetables_students(weekday, date, schedule, "group") VALUES (?, ?, ?, ?)""",
-                    (weekday, dates[weekday], schedule, group))
+                    """INSERT INTO temporary_timetables_students(weekday, date, schedule, "group") 
+                    VALUES (?, ?, ?, ?)""", (weekday, dates[weekday], schedule, group))
     connection.commit()
 
 
 def set_temporary_timetables_teachers(schedules: dict, dates: list):
-    connection = sqlite3.connect('../db/timetables.db')
+    connection = sqlite3.connect('db/timetables.db')
     cur = connection.cursor()
 
     for name, weekday_schedules in schedules.items():
@@ -84,8 +83,8 @@ def set_temporary_timetables_teachers(schedules: dict, dates: list):
             if cur.execute("""SELECT * FROM temporary_timetables_teachers WHERE weekday = ? AND name = ?""",
                            (weekday, name)).fetchone():
                 cur.execute(
-                    """UPDATE temporary_timetables_teachers SET schedule = ?, date = ? WHERE weekday = ? AND name = ?""",
-                    (schedule, dates[weekday], weekday, name))
+                    """UPDATE temporary_timetables_teachers SET schedule = ?, date = ? 
+                    WHERE weekday = ? AND name = ?""", (schedule, dates[weekday], weekday, name))
             else:
                 cur.execute(
                     """INSERT INTO temporary_timetables_teachers(name, weekday, date, schedule) VALUES (?, ?, ?, ?)""",
@@ -95,7 +94,7 @@ def set_temporary_timetables_teachers(schedules: dict, dates: list):
 
 def notify():
     bot = Bot(os.getenv("BOT_TOKEN"))
-    connection = sqlite3.connect('../db/timetables.db')
+    connection = sqlite3.connect('db/timetables.db')
     cursor = connection.cursor()
     users = cursor.execute("""SELECT chat_id FROM users""").fetchall() + cursor.execute(
         """SELECT chat_id FROM teacher_users""").fetchall()
