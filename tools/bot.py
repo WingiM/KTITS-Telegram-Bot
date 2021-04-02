@@ -3,6 +3,7 @@ import sqlite3
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Updater, CommandHandler, ConversationHandler, MessageHandler, Filters
 from dotenv import load_dotenv
+import time
 
 load_dotenv('.env')
 WEEKDAYS = {
