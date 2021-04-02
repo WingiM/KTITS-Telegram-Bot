@@ -14,7 +14,7 @@ def start(update, context):
         update.message.reply_text('Для привязки аккаунта используйте команду /link или кнопку.', reply_markup=key)
         return 1
     else:
-        markup = [['Отправить сообщение группе']]
+        markup = [['Отправить сообщение группе'], ['Отправить сообщение курсу']]
         key = ReplyKeyboardMarkup(markup, resize_keyboard=True, one_time_keyboard=True)
         update.message.reply_text('Ваш аккаунт уже привязан', reply_markup=key)
         return 3
@@ -30,9 +30,8 @@ def link_checker(update, _):
 
 
 def link(update, context):
-    message = update.message.text
     if link_checker(update, context):
-        markup = [['Отправить сообщение группе']]
+        markup = [['Отправить сообщение группе'], ['Отправить сообщение курсу']]
         key = ReplyKeyboardMarkup(markup, resize_keyboard=True, one_time_keyboard=True)
         update.message.reply_text('Ваш аккаунт уже привязан', reply_markup=key)
         return ConversationHandler.END
@@ -68,17 +67,23 @@ def message_send(update, context):
     message = update.message.text
     if message.lower() == 'выйти':
         return leave(update, context)
-
-    if message.lower() != "отправить сообщение группе":
+    if message.lower() != "отправить сообщение группе" and message.lower() != "отправить сообщение курсу":
         print(message.lower())
         update.message.reply_text("Вы ввели что-то не так!", reply_markup=None)
-        return ConversationHandler.END
+        return ConversationHandler
     markup = [['Выйти']]
     key = ReplyKeyboardMarkup(markup, resize_keyboard=True, one_time_keyboard=True)
-    update.message.reply_text(
-        "Пожалуйста, введите номера групп, которым хотите отправить сообщение\n"
-        "Например: 120 121 220", reply_markup=key)
-    return 4
+    if message.lower() == 'отправить сообщение группе':
+        update.message.reply_text(
+            "Пожалуйста, введите номера групп, которым хотите отправить сообщение\n"
+            "Например: 120 121 220", reply_markup=key)
+        return 4
+    else:
+        markup = [['1 курс', "2 курс"], ['3 курс', '4 курс'], ['Выйти']]
+        key = ReplyKeyboardMarkup(markup, resize_keyboard=True, one_time_keyboard=True)
+        update.message.reply_text("Введите (или выберите) номер курса, которому хотите отправить сообщение",
+                                  reply_markup=key)
+        return 6
 
 
 def select_group(update, context):
@@ -129,6 +134,37 @@ def message_to_group(update: Update, context):
     return ConversationHandler.END
 
 
+def send_message_to_course(update: Update, context):
+    message = update.message.text
+    if message and message.lower() == 'выйти':
+        return leave(update, context)
+    current_course = context.user_data['to_course']
+    connection = sqlite3.connect('db/timetables.db')
+    cursor = connection.cursor()
+    users = cursor.execute("""SELECT chat_id FROM users WHERE "group" LIKE ? """, (str(current_course) + "%", ))
+    for user in users:
+        bot.sendMessage(chat_id=user[0], text="Учебная часть:\n" + message)
+
+
+def select_course(update: Update, context):
+    if not link_checker(update, context):
+        update.message.reply_text('Ваш аккаунт не привязан')
+        return ConversationHandler.END
+    message = update.message.text
+    if message.lower() == 'выйти':
+        return leave(update, context)
+
+    course = message.split(" ")
+    if int(course[0]) not in range(1, 5):
+        update.message.reply_text("Вы ввели неправильный номер курса!")
+        return ConversationHandler.END
+    context.user_data['to_course'] = int(course[0])
+    markup = [['Выйти']]
+    key = ReplyKeyboardMarkup(markup, resize_keyboard=True, one_time_keyboard=True)
+    update.message.reply_text("Введите сообщение курсу", reply_markup=key)
+    return 7
+
+
 def check_group(group):
     connection = sqlite3.connect('db/timetables.db')
     cursor = connection.cursor()
@@ -152,7 +188,9 @@ def main():
             2: [MessageHandler(Filters.text, linker)],
             3: [MessageHandler(Filters.text, message_send)],
             4: [MessageHandler(Filters.text, select_group, pass_user_data=True)],
-            5: [MessageHandler(Filters.text | Filters.photo | Filters.group, message_to_group, pass_user_data=True)]
+            5: [MessageHandler(Filters.text | Filters.photo | Filters.group, message_to_group, pass_user_data=True)],
+            6: [MessageHandler(Filters.text, select_course)],
+            7: [MessageHandler(Filters.text | Filters.photo, send_message_to_course)]
         },
         fallbacks=[CommandHandler('exit', leave)]
     ))
