@@ -22,7 +22,7 @@ def start(update, context):
         update.message.reply_text('Ваш аккаунт не привязан к системе! Используйте /link, чтобы привязаться')
 
 
-def link_checker(update, context):
+def link_checker(update, _):
     connection = sqlite3.connect('db/timetables.db')
     cursor = connection.cursor()
     if not cursor.execute("""SELECT "group" FROM users WHERE chat_id = ?""",
@@ -31,7 +31,7 @@ def link_checker(update, context):
     return True
 
 
-def link_checker_t(update, context):
+def link_checker_t(update, _):
     connection = sqlite3.connect('db/timetables.db')
     cursor = connection.cursor()
     if not cursor.execute("""SELECT name FROM teacher_users WHERE chat_id = ?""",
@@ -128,7 +128,7 @@ def linker(update, context):
     return ConversationHandler.END
 
 
-def leave(update, context):
+def leave(update, _):
     update.message.reply_text('Хорошо, отменяем', reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
 

@@ -1,3 +1,5 @@
+import datetime
+
 import openpyxl
 
 LESSONS_DAILY = {
@@ -21,7 +23,7 @@ LESSONS_SATURDAY = {
 }
 
 
-def groups_parse(cells, pair, weekday):
+def parse_groups(cells, pair, weekday):
     for cell_obj in cells:
         if weekday == 5:
             string = '•' + LESSONS_SATURDAY[pair] + ' - '
@@ -80,7 +82,7 @@ def parse_teachers(cells, pair, weekday, group):
     return t_pairs
 
 
-def parse_groups(workbook, workbook_number):
+def parse_workbook(workbook, workbook_number):
     sheet_names = workbook.sheetnames
     groups = {}
     teachers = {}
@@ -98,7 +100,7 @@ def parse_groups(workbook, workbook_number):
                 groups[group_number][weekday] = ''
                 for rows in range(start_row, start_row + (7 if workbook_number == 4 else 6)):  # Берем по 6 пар
                     cells = sheet[f'{chr(start_col)}{rows}:{chr(end_col)}{rows}']
-                    groups[group_number][weekday] += groups_parse(cells, pair, weekday) + '\n\n'
+                    groups[group_number][weekday] += parse_groups(cells, pair, weekday) + '\n\n'
                     t_pairs = parse_teachers(cells, pair, weekday, group_number)
                     for name in t_pairs:
                         teachers[name] = teachers.get(name, {})
@@ -112,15 +114,36 @@ def parse_groups(workbook, workbook_number):
     return groups, teachers
 
 
-def main():
+def get_temp_timetable_dates(workbook):
+    dates = []
+    cells = workbook[workbook.sheetnames[0]][f'A{8}:A{38}']
+    for cellObj in cells:
+        for cell in cellObj:
+            if cell.value:
+                dates.append(cell.value.split('\n')[-1].split('.'))
+    return dates
+
+
+def main(temp: bool = False):
     groups = {}
     teachers = {}
+    temp_dates = None
     for i in range(1, 5):
-        workbook = openpyxl.load_workbook(f'workbooks/rasp{i}.xlsx')
-        group_dict, teacher_dict = parse_groups(workbook, i)
+        workbook = openpyxl.load_workbook(
+            f'../workbooks/rasp{i}.xlsx' if not temp else f'../workbooks/temp_rasp{i}.xlsx')
+        if temp and i == 1:
+            dates = get_temp_timetable_dates(workbook)
+            dates = list(map(lambda x: datetime.date(*map(int, x[::-1])), dates))
+            if (max(dates) - datetime.date.today()).days < 0:
+                print('Временное расписание уже устарело')
+                return False
+            temp_dates = dates
+        group_dict, teacher_dict = parse_workbook(workbook, i)
         groups.update(group_dict)
         for teacher in teacher_dict:
             for weekday in teacher_dict[teacher]:
                 teachers[teacher] = teachers.get(teacher, {})
                 teachers[teacher][weekday] = teachers[teacher].get(weekday, []) + teacher_dict[teacher][weekday]
-    return groups, teachers
+    if not temp_dates:
+        return groups, teachers
+    return groups, teachers, temp_dates
