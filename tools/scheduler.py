@@ -30,7 +30,6 @@ def parse():
         groups_schedule_temp, teachers_schedule_temp, dates = temp_timetables
         set_temporary_timetables_students(groups_schedule_temp, dates)
         set_temporary_timetables_teachers(teachers_schedule_temp, dates)
-        notify()
 
     print(f'Парс окончен {datetime.datetime.now()}')
 

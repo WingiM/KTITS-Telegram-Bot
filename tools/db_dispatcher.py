@@ -48,11 +48,14 @@ def check_temporary_timetables():
     connection = sqlite3.connect('db/timetables.db')
     cur = connection.cursor()
     dates = cur.execute("""SELECT DISTINCT date FROM temporary_timetables_students""").fetchall()
-    closest_date = max(list(map(lambda x: datetime.date(*map(int, x[0].split('-'))), dates)))
-    if (closest_date - datetime.date.today()).days < 0:
-        cur.execute("""DELETE FROM temporary_timetables_students""")
-        cur.execute("""DELETE FROM temporary_timetables_teachers""")
-    connection.commit()
+    closest_date = list(map(lambda x: datetime.date(*map(int, x[0].split('-'))), dates))
+    try:
+        if (max(closest_date) - datetime.date.today()).days < 0:
+            cur.execute("""DELETE FROM temporary_timetables_students""")
+            cur.execute("""DELETE FROM temporary_timetables_teachers""")
+        connection.commit()
+    except ValueError:
+        return
 
 
 def set_temporary_timetables_students(schedules: dict, dates: list):
@@ -92,11 +95,11 @@ def set_temporary_timetables_teachers(schedules: dict, dates: list):
     connection.commit()
 
 
-def notify():
-    bot = Bot(os.getenv("BOT_TOKEN"))
-    connection = sqlite3.connect('db/timetables.db')
-    cursor = connection.cursor()
-    users = cursor.execute("""SELECT chat_id FROM users""").fetchall() + cursor.execute(
-        """SELECT chat_id FROM teacher_users""").fetchall()
-    for user in users:
-        bot.sendMessage(chat_id=user[0], text="ВНИМАНИЕ!!!\nПоявилось запланированное изменение в расписании.")
+# def notify():
+#     bot = Bot(os.getenv("BOT_TOKEN"))
+#     connection = sqlite3.connect('db/timetables.db')
+#     cursor = connection.cursor()
+#     users = cursor.execute("""SELECT chat_id FROM users""").fetchall() + cursor.execute(
+#         """SELECT chat_id FROM teacher_users""").fetchall()
+#     for user in users:
+#         bot.sendMessage(chat_id=user[0], text="ВНИМАНИЕ!!!\nПоявилось запланированное изменение в расписании.")

@@ -196,9 +196,16 @@ def get_timetable(update, context):
     weekday = WEEKDAYS[message]
     group = cursor.execute("""SELECT "group" FROM users 
     WHERE chat_id = ?""", (update.message.from_user['id'],)).fetchone()[0]
-    timetable = cursor.execute("""SELECT schedule FROM default_timetables_students WHERE "group" = ? AND weekday = ?""",
-                               (group, weekday)).fetchone()[0]
-    update.message.reply_text(f'Вот и расписание на {message}')
+    try:
+        timetable = cursor.execute(
+            """SELECT date, schedule FROM temporary_timetables_students 
+            WHERE "group" = ? AND weekday = ?""", (group, weekday)).fetchone()
+        message = f'{message} {timetable[0]}'
+        timetable = timetable[1]
+        update.message.reply_text(message)
+    except TypeError:
+        timetable = cursor.execute("""SELECT schedule FROM default_timetables_students 
+        WHERE "group" = ? AND weekday = ?""", (group, weekday)).fetchone()[0]
     update.message.reply_text(f'{timetable}')
     return 1
 
