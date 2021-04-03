@@ -93,11 +93,12 @@ def select_group(update, context):
     if message.lower() == 'выйти':
         return leave(update, context)
     groups = set(message.split(" "))
+    to_del = set()
     for group in groups:
         if not check_group(group):
-            groups.remove(group)
-            update.message.reply_text("Вы ввели неправильный номер группы.")
-    context.user_data['to_group'] = groups
+            to_del.add(group)
+            update.message.reply_text(f"Группы {group} не существует")
+    context.user_data['to_group'] = groups - to_del
     markup = [['Выйти']]
     key = ReplyKeyboardMarkup(markup, resize_keyboard=True)
     update.message.reply_text("Введите сообщение группам", reply_markup=key)
