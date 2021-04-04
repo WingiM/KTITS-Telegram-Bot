@@ -83,7 +83,7 @@ def message_send(update, context):
         key = ReplyKeyboardMarkup(markup, resize_keyboard=True)
         update.message.reply_text("Введите (или выберите) номер курса, которому хотите отправить сообщение",
                                   reply_markup=key)
-        return select_course(update, context)
+        return 3
     # else:
     #     return message_send(update, context)
 
@@ -143,13 +143,11 @@ def message_to_group(update: Update, context):
 
 def select_course(update: Update, context):
     message = update.message.text
-    print(message)
     if not link_checker(update, context):
         update.message.reply_text('Ваш аккаунт не привязан')
         return ConversationHandler.END
     if message.lower() == 'выйти':
         return leave(update, context)
-    print()
     course = message.split(" ") if message else "1 курс"
     if int(course[0]) not in range(1, 5):
         update.message.reply_text("Вы ввели неправильный номер курса!")
@@ -158,7 +156,7 @@ def select_course(update: Update, context):
     markup = [['Выйти']]
     key = ReplyKeyboardMarkup(markup, resize_keyboard=True)
     update.message.reply_text("Введите сообщение курсу", reply_markup=key)
-    return 1
+    return 4
 
 
 def send_message_to_course(update: Update, context):
@@ -194,7 +192,7 @@ def send_message_to_course(update: Update, context):
               ['/start (если не работают другие кнопки)']]
     key = ReplyKeyboardMarkup(markup, resize_keyboard=True)
     update.message.reply_text("Выберите действие", reply_markup=key)
-    return message_send(update, context)
+    return ConversationHandler.END
 
 
 def check_group(group):
@@ -230,15 +228,8 @@ def main():
             states={
                 1: [MessageHandler(Filters.text, select_group, pass_user_data=True)],
                 2: [MessageHandler(Filters.text | Filters.photo | Filters.group, message_to_group, pass_user_data=True)],
-            },
-            fallbacks=[CommandHandler('exit', leave)],
-        )
-    )
-    dispatcher.add_handler(
-        ConversationHandler(
-            entry_points=[MessageHandler(Filters.text, select_course)],
-            states={
-                1: [MessageHandler(Filters.text | Filters.photo, send_message_to_course)],
+                3: [MessageHandler(Filters.text, select_course)],
+                4: [MessageHandler(Filters.text, send_message_to_course)]
             },
             fallbacks=[CommandHandler('exit', leave)],
         )
