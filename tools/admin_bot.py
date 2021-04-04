@@ -1,5 +1,7 @@
 import os
 import sqlite3
+from asyncore import dispatcher
+
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Bot, Update, InputMediaPhoto
 from telegram.ext import Updater, CommandHandler, ConversationHandler, MessageHandler, Filters
 
@@ -27,7 +29,7 @@ def start(update, context):
                   ['/start (если не работают другие кнопки)']]
         key = ReplyKeyboardMarkup(markup, resize_keyboard=True)
         update.message.reply_text('Выберите действие', reply_markup=key)
-        return 3
+        return message_send(update, context)
 
 
 def link(update, context):
@@ -36,7 +38,7 @@ def link(update, context):
                   ['/start (если не работают другие кнопки)']]
         key = ReplyKeyboardMarkup(markup, resize_keyboard=True)
         update.message.reply_text('Ваш аккаунт уже привязан', reply_markup=key)
-        return 3
+        return message_send(update, context)
     markup = [['Выйти']]
     key = ReplyKeyboardMarkup(markup, resize_keyboard=True)
     update.message.reply_text('Пожалуйста, введите пароль учебной части', reply_markup=key)
@@ -59,7 +61,7 @@ def linker(update, context):
     key = ReplyKeyboardMarkup(markup, resize_keyboard=True)
     update.message.reply_text('Успешно привязали аккаунт.')
     update.message.reply_text("Выберите действие", reply_markup=key)
-    return 3
+    return message_send(update, context)
 
 
 def message_send(update, context):
@@ -75,15 +77,15 @@ def message_send(update, context):
         update.message.reply_text(
             "Пожалуйста, введите номера групп, которым хотите отправить сообщение\n"
             "Например: 120 121 220", reply_markup=key)
-        return 4
+        return select_group(update, context)
     elif message.lower() == 'отправить сообщение курсу':
         markup = [['1 курс', "2 курс"], ['3 курс', '4 курс'], ['Выйти']]
         key = ReplyKeyboardMarkup(markup, resize_keyboard=True)
         update.message.reply_text("Введите (или выберите) номер курса, которому хотите отправить сообщение",
                                   reply_markup=key)
-        return 6
+        return select_course(update, context)
     else:
-        return 3
+        return message_send(update, context)
 
 
 def select_group(update, context):
@@ -100,7 +102,7 @@ def select_group(update, context):
     markup = [['Выйти']]
     key = ReplyKeyboardMarkup(markup, resize_keyboard=True)
     update.message.reply_text("Введите сообщение группам", reply_markup=key)
-    return 5
+    return message_to_group(update, context)
 
 
 def message_to_group(update: Update, context):
@@ -136,7 +138,7 @@ def message_to_group(update: Update, context):
               ['/start (если не работают другие кнопки)']]
     key = ReplyKeyboardMarkup(markup, resize_keyboard=True)
     update.message.reply_text("Выберите действие", reply_markup=key)
-    return 3
+    return message_send(update, context)
 
 
 def select_course(update: Update, context):
@@ -150,12 +152,12 @@ def select_course(update: Update, context):
     course = message.split(" ")
     if not course[0].isdigit() or int(course[0]) not in range(1, 5):
         update.message.reply_text("Вы ввели неправильный номер курса!")
-        return 6
+        return select_course(update, context)
     context.user_data['to_course'] = course[0]
     markup = [['Выйти']]
     key = ReplyKeyboardMarkup(markup, resize_keyboard=True)
     update.message.reply_text("Введите сообщение курсу", reply_markup=key)
-    return 7
+    return 1
 
 
 def send_message_to_course(update: Update, context):
@@ -191,7 +193,7 @@ def send_message_to_course(update: Update, context):
               ['/start (если не работают другие кнопки)']]
     key = ReplyKeyboardMarkup(markup, resize_keyboard=True)
     update.message.reply_text("Выберите действие", reply_markup=key)
-    return 3
+    return message_send(update, context)
 
 
 def check_group(group):
@@ -207,7 +209,7 @@ def leave(update, _):
               ['/start (если не работают другие кнопки)']]
     key = ReplyKeyboardMarkup(markup, resize_keyboard=True)
     update.message.reply_text('Хорошо, отменяем.', reply_markup=key)
-    return 3
+    return message_send(update, _)
 
 
 def main():
@@ -218,22 +220,29 @@ def main():
         states={
             1: [MessageHandler(Filters.text, link)],
             2: [MessageHandler(Filters.text, linker)],
-            3: [MessageHandler(Filters.text, message_send)],
-            4: [MessageHandler(Filters.text, select_group, pass_user_data=True)],
-            5: [MessageHandler(Filters.text | Filters.photo | Filters.group, message_to_group, pass_user_data=True)],
-            6: [MessageHandler(Filters.text, select_course)],
-            7: [MessageHandler(Filters.text | Filters.photo, send_message_to_course)]
         },
         fallbacks=[CommandHandler('exit', leave)]
     ))
-    # dispatcher.add_handler(ConversationHandler(
-    #     entry_points=[CommandHandler('send', message_send)],
-    #     states={
-    #         1: [MessageHandler(Filters.text, select_group, pass_user_data=True)],
-    #         2: [MessageHandler(Filters.text | Filters.photo | Filters.group, message_to_group, pass_user_data=True)]
-    #     },
-    #     fallbacks=[CommandHandler('exit', leave)]
-    # ))
+    dispatcher.add_handler(
+        ConversationHandler(
+            entry_points=[CommandHandler("message_send", message_send)],
+            states={
+                1: [MessageHandler(Filters.text, select_group, pass_user_data=True)],
+                2: [MessageHandler(Filters.text | Filters.photo | Filters.group, message_to_group, pass_user_data=True)],
+            },
+            fallbacks=[CommandHandler('exit', leave)],
+        )
+    )
+    dispatcher.add_handler(
+        ConversationHandler(
+            entry_points=[CommandHandler("select_course", select_course)],
+            states={
+                1: [MessageHandler(Filters.text | Filters.photo, send_message_to_course)],
+            },
+            fallbacks=[CommandHandler('exit', leave)],
+        )
+    )
+
     print('Admin bot successfully started')
     updater.start_polling()
     updater.idle()
