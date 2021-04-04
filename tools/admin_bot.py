@@ -65,10 +65,10 @@ def linker(update, context):
 
 
 def message_send(update, context):
+    message = update.message.text
     if not link_checker(update, context):
         update.message.reply_text('Ваш аккаунт не привязан')
         return ConversationHandler.END
-    message = update.message.text
     if message.lower() == 'выйти':
         return leave(update, context)
     markup = [['Выйти']]
@@ -77,15 +77,15 @@ def message_send(update, context):
         update.message.reply_text(
             "Пожалуйста, введите номера групп, которым хотите отправить сообщение\n"
             "Например: 120 121 220", reply_markup=key)
-        return select_group(update, context)
+        return 1
     elif message.lower() == 'отправить сообщение курсу':
         markup = [['1 курс', "2 курс"], ['3 курс', '4 курс'], ['Выйти']]
         key = ReplyKeyboardMarkup(markup, resize_keyboard=True)
         update.message.reply_text("Введите (или выберите) номер курса, которому хотите отправить сообщение",
                                   reply_markup=key)
         return select_course(update, context)
-    else:
-        return message_send(update, context)
+    # else:
+    #     return message_send(update, context)
 
 
 def select_group(update, context):
@@ -102,7 +102,7 @@ def select_group(update, context):
     markup = [['Выйти']]
     key = ReplyKeyboardMarkup(markup, resize_keyboard=True)
     update.message.reply_text("Введите сообщение группам", reply_markup=key)
-    return message_to_group(update, context)
+    return 2
 
 
 def message_to_group(update: Update, context):
@@ -142,17 +142,18 @@ def message_to_group(update: Update, context):
 
 
 def select_course(update: Update, context):
+    message = update.message.text
+    print(message)
     if not link_checker(update, context):
         update.message.reply_text('Ваш аккаунт не привязан')
         return ConversationHandler.END
-    message = update.message.text
     if message.lower() == 'выйти':
         return leave(update, context)
-
-    course = message.split(" ")
-    if not course[0].isdigit() or int(course[0]) not in range(1, 5):
+    print()
+    course = message.split(" ") if message else "1 курс"
+    if int(course[0]) not in range(1, 5):
         update.message.reply_text("Вы ввели неправильный номер курса!")
-        return select_course(update, context)
+        return ConversationHandler.END
     context.user_data['to_course'] = course[0]
     markup = [['Выйти']]
     key = ReplyKeyboardMarkup(markup, resize_keyboard=True)
@@ -209,7 +210,7 @@ def leave(update, _):
               ['/start (если не работают другие кнопки)']]
     key = ReplyKeyboardMarkup(markup, resize_keyboard=True)
     update.message.reply_text('Хорошо, отменяем.', reply_markup=key)
-    return message_send(update, _)
+    return ConversationHandler.END
 
 
 def main():
@@ -225,7 +226,7 @@ def main():
     ))
     dispatcher.add_handler(
         ConversationHandler(
-            entry_points=[CommandHandler("message_send", message_send)],
+            entry_points=[MessageHandler(Filters.text, message_send)],
             states={
                 1: [MessageHandler(Filters.text, select_group, pass_user_data=True)],
                 2: [MessageHandler(Filters.text | Filters.photo | Filters.group, message_to_group, pass_user_data=True)],
@@ -235,7 +236,7 @@ def main():
     )
     dispatcher.add_handler(
         ConversationHandler(
-            entry_points=[CommandHandler("select_course", select_course)],
+            entry_points=[MessageHandler(Filters.text, select_course)],
             states={
                 1: [MessageHandler(Filters.text | Filters.photo, send_message_to_course)],
             },
