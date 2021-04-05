@@ -110,7 +110,7 @@ def message_courses(update, context):
     if not link_checker(update, context):
         update.message.reply_text('Ваш аккаунт не привязан! Используйте /link')
         return ConversationHandler.END
-    markup = [['1 курс', "2 курс"], ['3 курс', '4 курс'], ['Выйти']]
+    markup = [['1 курс', "2 курс"], ['3 курс', '4 курс'], ["Всем"], ['Выйти']]
     key = ReplyKeyboardMarkup(markup, resize_keyboard=True)
     update.message.reply_text('Выберите курс', reply_markup=key)
     return 1
@@ -120,9 +120,11 @@ def select_courses(update, context):
     message = update.message.text
     if message.lower() == 'выйти':
         return leave(update, context)
-    course = message.split()[0]
+    course = [message.split()[0]]
+    if message.lower() == "всем":
+        course = range(1, 5)
     try:
-        if int(course) not in range(1, 5):
+        if int(course[0]) not in range(1, 5):
             update.message.reply_text('Вы что-то ввели не так')
             return 1
     except ValueError:
@@ -149,17 +151,19 @@ def send_to_courses(update, context):
         pass
     connection = sqlite3.connect('db/timetables.db')
     cursor = connection.cursor()
-    users = cursor.execute("""SELECT chat_id FROM users WHERE "group" LIKE ? """,
-                           (context.user_data['to_course'] + "%",))
-    for user in users:
-        if photo_passed:
-            bot.sendPhoto(chat_id=user[0], photo=open("image_temp/file.png", 'rb'),
-                          caption=("Учебная часть:\n" + update.message.caption)
-                          if update.message.caption is not None else None)
-        else:
-            bot.sendMessage(chat_id=user[0], text="Учебная часть:\n" + message)
-    update.message.reply_text(f'Успешно отправили сообщение {context.user_data["to_course"]} курсу',
-                              reply_markup=ReplyKeyboardRemove())
+    groups = context.user_data['to_course']
+    for i in groups:
+        users = cursor.execute("""SELECT chat_id FROM users WHERE "group" LIKE ? """,
+                               (str(i) + "%",))
+        for user in users:
+            if photo_passed:
+                bot.sendPhoto(chat_id=user[0], photo=open("image_temp/file.png", 'rb'),
+                              caption=("Учебная часть:\n" + update.message.caption)
+                              if update.message.caption is not None else None)
+            else:
+                bot.sendMessage(chat_id=user[0], text="Учебная часть:\n" + message)
+        update.message.reply_text(f'Успешно отправили сообщение {str(i)} курсу',
+                                  reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
 
 
