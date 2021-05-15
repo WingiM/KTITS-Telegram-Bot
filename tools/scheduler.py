@@ -17,8 +17,6 @@ def parse():
         response = get(URL + link.get('href').rstrip('/'))
         with open(f'workbooks/rasp{number}.xlsx', 'wb') as file:
             file.write(response.content)
-    with open('db/log.txt', 'a') as file:
-        file.write(str(datetime.datetime.now()) + '\n')
 
     groups_schedule, teachers_schedule = excel.main()
     set_default_timetables(groups_schedule)
