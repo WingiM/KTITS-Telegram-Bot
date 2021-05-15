@@ -1,5 +1,3 @@
-![KTITS-logo](https://www.mck-ktits.ru/resource/img/news/logo-3.png)
-
 # Бот-расписание
 
 ### Перед началом
