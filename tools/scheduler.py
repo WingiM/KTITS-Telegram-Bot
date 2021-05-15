@@ -1,4 +1,3 @@
-import datetime
 import schedule
 from bs4 import BeautifulSoup
 from requests import get
@@ -36,8 +35,8 @@ def parse():
 
 def main():
     parse()
-    print('URL parser successfully started')
     schedule.every(1).day.at("04:00").do(parse)
+    print('URL parser successfully started')
 
     while True:
         schedule.run_pending()

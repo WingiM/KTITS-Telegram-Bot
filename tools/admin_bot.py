@@ -1,9 +1,15 @@
 import os
 import sqlite3
-from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Bot
+from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Bot, error
 from telegram.ext import Updater, CommandHandler, ConversationHandler, MessageHandler, Filters
 
 bot = Bot(os.getenv("BOT_TOKEN"))
+
+
+def start(update, context):
+    update.message.reply_text('Здравствуйте!')
+    if not link_checker(update, context):
+        update.message.reply_text('Для привязки аккаунта используйте команду /link или кнопку.')
 
 
 def link_checker(update, _):
@@ -13,12 +19,6 @@ def link_checker(update, _):
                           (update.message.from_user["id"],)).fetchone():
         return False
     return True
-
-
-def start(update, context):
-    update.message.reply_text('Здравствуйте!')
-    if not link_checker(update, context):
-        update.message.reply_text('Для привязки аккаунта используйте команду /link или кнопку.')
 
 
 def link(update, context):
@@ -95,12 +95,15 @@ def send_to_groups(update, context):
     for group in groups_list:
         users = cursor.execute("""SELECT chat_id FROM users WHERE "group" = ? """, (group,)).fetchall()
         for user in users:
-            if photo_passed:
-                bot.sendPhoto(chat_id=user[0], photo=open("image_temp/file.png", 'rb'),
-                              caption=("Учебная часть:\n" + update.message.caption)
-                              if update.message.caption is not None else None)
-            else:
-                bot.sendMessage(chat_id=user[0], text="Учебная часть:\n" + message)
+            try:
+                if photo_passed:
+                    bot.sendPhoto(chat_id=user[0], photo=open("image_temp/file.png", 'rb'),
+                                  caption=("Учебная часть:\n" + update.message.caption)
+                                  if update.message.caption is not None else None)
+                else:
+                    bot.sendMessage(chat_id=user[0], text="Учебная часть:\n" + message)
+            except error.Unauthorized:
+                cursor.execute("""DELETE FROM users WHERE chat_id = ?""", user[0])
         update.message.reply_text(f'Успешно отправили сообщение группе {group}')
     update.message.reply_text("Рассылка закончена!", reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END

@@ -161,7 +161,7 @@ def gett(update, context):
     return 1
 
 
-def get_timetable_teacher(update, context):
+def get_timetablet(update, context):
     message = update.message.text
     if message.lower() == 'выйти':
         return leave(update, context)
@@ -191,13 +191,6 @@ def get_timetable_teacher(update, context):
             return 1
         timetable = timetable[0]
     update.message.reply_text(f'{timetable}')
-    # try:
-    #     timetable = \
-    #         cursor.execute("""SELECT schedule FROM default_timetables_teachers WHERE name = ? AND weekday = ?""",
-    #                        (group, weekday)).fetchone()[0]
-    # except TypeError:
-    #     update.message.reply_text('Повезло! У вас нет пар в этот день')
-    #     return 1
     return 1
 
 
@@ -230,6 +223,7 @@ def main():
     dispatcher.add_handler(CommandHandler('start', start))
     dispatcher.add_handler(CommandHandler('unlink', unlink))
     dispatcher.add_handler(CommandHandler('unlinkt', unlinkt))
+
     dispatcher.add_handler(ConversationHandler(
         entry_points=[CommandHandler('link', link)],
         states={
@@ -237,6 +231,7 @@ def main():
         },
         fallbacks=[CommandHandler('exit', leave)]
     ))
+
     dispatcher.add_handler(ConversationHandler(
         entry_points=[CommandHandler('linkt', linkt)],
         states={
@@ -244,6 +239,7 @@ def main():
         },
         fallbacks=[CommandHandler('exit', leave)]
     ))
+
     dispatcher.add_handler(ConversationHandler(
         entry_points=[CommandHandler('get', get)],
         states={
@@ -251,10 +247,11 @@ def main():
         },
         fallbacks=[CommandHandler('exit', leave)]
     ))
+
     dispatcher.add_handler(ConversationHandler(
         entry_points=[CommandHandler('gett', gett)],
         states={
-            1: [MessageHandler(Filters.text, get_timetable_teacher)]
+            1: [MessageHandler(Filters.text, get_timetablet)]
         },
         fallbacks=[CommandHandler('exit', leave)]
     ))

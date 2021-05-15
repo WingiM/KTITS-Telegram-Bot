@@ -1,10 +1,5 @@
 import datetime
-import os
 import sqlite3
-from dotenv import load_dotenv
-from telegram import Bot
-
-load_dotenv('.env')
 
 
 def set_default_timetables(schedules: dict):
