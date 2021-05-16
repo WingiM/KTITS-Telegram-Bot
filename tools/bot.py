@@ -45,11 +45,12 @@ def linker(update, context):
     if not cursor.execute("""SELECT * FROM groups WHERE number = ?""", (message,)).fetchone():
         update.message.reply_text('Такой группы не существует!')
         return 1
-    chat_id = update.message.chat['id']
-    if cursor.execute("""SELECT * FROM users WHERE chat_id = ?""", (chat_id,)).fetchone():
+    chat_id = update.message.from_user['id']
+    username = update.message.from_user['username']
+    if cursor.execute("""SELECT * FROM users WHERE user_id = ?""", (chat_id,)).fetchone():
         update.message.reply_text('Ваш аккаунт уже привязан к системе!', reply_markup=ReplyKeyboardRemove())
         return ConversationHandler.END
-    cursor.execute("""INSERT INTO users VALUES (?, ?)""", (chat_id, message))
+    cursor.execute("""INSERT INTO users VALUES (?, ?, ?)""", (chat_id, message, username))
     connection.commit()
     update.message.reply_text('Вы успешно подключили ваш аккаунт!', reply_markup=ReplyKeyboardRemove())
     update.message.reply_text('Теперь вы можете использовать команду /get для того, чтобы получить расписание\n'
@@ -61,12 +62,26 @@ def unlink(update, context):
     if link_checker(update, context):
         connection = sqlite3.connect('db/timetables.db')
         cursor = connection.cursor()
-        cursor.execute("""DELETE FROM users WHERE chat_id =  ?""", (update.message.from_user['id'],))
+        cursor.execute("""DELETE FROM users WHERE user_id =  ?""", (update.message.from_user['id'],))
         connection.commit()
         update.message.reply_text('Успешно отвязали ваш аккаунт', reply_markup=ReplyKeyboardRemove())
     else:
         update.message.reply_text('Ваш аккаунт и так не привязан ни к одной из групп',
                                   reply_markup=ReplyKeyboardRemove())
+
+
+def link_checker(update, _):
+    connection = sqlite3.connect('db/timetables.db')
+    cursor = connection.cursor()
+    if not cursor.execute("""SELECT "group" FROM users WHERE user_id = ?""",
+                          (update.message.from_user['id'],)).fetchone():
+        return False
+    username = cursor.execute("""SELECT username FROM users WHERE user_id = ?""", (update.message.from_user['id'], )).fetchone()
+    if username[0] != update.message.from_user['username']:
+        cursor.execute("""UPDATE users SET username = ? WHERE user_id = ?""",
+                       (update.message.from_user['username'], update.message.from_user['id']))
+        connection.commit()
+    return True
 
 
 def linkt(update, context):
@@ -89,7 +104,7 @@ def linkert(update, context):
     if not cursor.execute("""SELECT * FROM teachers WHERE name = ?""", (message,)).fetchone():
         update.message.reply_text('Такой фамилии и инициалов в базе данных нет.')
         return 1
-    chat_id = update.message.chat['id']
+    chat_id = update.message.from_user['id']
     if cursor.execute("""SELECT * FROM teacher_users WHERE chat_id = ?""", (chat_id,)).fetchone():
         update.message.reply_text('Ваш аккаунт уже привязан к системе!', reply_markup=ReplyKeyboardRemove())
         return ConversationHandler.END
@@ -110,6 +125,15 @@ def unlinkt(update, context):
         update.message.reply_text('Успешно отвязали ваш аккаунт', reply_markup=ReplyKeyboardRemove())
     else:
         update.message.reply_text('Ваш аккаунт и так не привязан', reply_markup=ReplyKeyboardRemove())
+
+
+def link_checker_t(update, _):
+    connection = sqlite3.connect('db/timetables.db')
+    cursor = connection.cursor()
+    if not cursor.execute("""SELECT name FROM teacher_users WHERE chat_id = ?""",
+                          (update.message.from_user['id'],)).fetchone():
+        return False
+    return True
 
 
 def get(update, context):
@@ -136,7 +160,7 @@ def get_timetable(update, context):
     cursor = connection.cursor()
     weekday = WEEKDAYS[message]
     group = cursor.execute("""SELECT "group" FROM users 
-    WHERE chat_id = ?""", (update.message.from_user['id'],)).fetchone()[0]
+    WHERE user_id = ?""", (update.message.from_user['id'],)).fetchone()[0]
     try:
         timetable = cursor.execute(
             """SELECT date, schedule FROM temporary_timetables_students 
@@ -192,24 +216,6 @@ def get_timetablet(update, context):
         timetable = timetable[0]
     update.message.reply_text(f'{timetable}')
     return 1
-
-
-def link_checker(update, _):
-    connection = sqlite3.connect('db/timetables.db')
-    cursor = connection.cursor()
-    if not cursor.execute("""SELECT "group" FROM users WHERE chat_id = ?""",
-                          (update.message.from_user['id'],)).fetchone():
-        return False
-    return True
-
-
-def link_checker_t(update, _):
-    connection = sqlite3.connect('db/timetables.db')
-    cursor = connection.cursor()
-    if not cursor.execute("""SELECT name FROM teacher_users WHERE chat_id = ?""",
-                          (update.message.from_user['id'],)).fetchone():
-        return False
-    return True
 
 
 def leave(update, _):
