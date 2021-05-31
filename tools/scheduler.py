@@ -9,14 +9,14 @@ URL = 'https://www.mck-ktits.ru/'
 
 def parse():
     print(f'Начинаем парс {datetime.datetime.now()}')
-    html = get(URL).content.decode('utf-8')
-    parser = BeautifulSoup(html, 'html.parser')
-    schedules = parser.find('div', class_='schedule__item schedule__class')
-    href = schedules.find_all('a')
-    for number, link in enumerate(href, start=1):
-        response = get(URL + link.get('href').rstrip('/'))
-        with open(f'workbooks/rasp{number}.xlsx', 'wb') as file:
-            file.write(response.content)
+    # html = get(URL).content.decode('utf-8')
+    # parser = BeautifulSoup(html, 'html.parser')
+    # schedules = parser.find('div', class_='schedule__item schedule__class')
+    # href = schedules.find_all('a')
+    # for number, link in enumerate(href, start=1):
+    #     response = get(URL + link.get('href').rstrip('/'))
+    #     with open(f'workbooks/rasp{number}.xlsx', 'wb') as file:
+    #         file.write(response.content)
 
     groups_schedule, teachers_schedule = excel.main()
     set_default_timetables(groups_schedule)

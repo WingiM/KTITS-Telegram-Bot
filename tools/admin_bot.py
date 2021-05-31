@@ -93,7 +93,7 @@ def send_to_groups(update, context):
     connection = sqlite3.connect('db/timetables.db')
     cursor = connection.cursor()
     for group in groups_list:
-        users = cursor.execute("""SELECT chat_id FROM users WHERE "group" = ? """, (group,)).fetchall()
+        users = cursor.execute("""SELECT user_id FROM users WHERE "group" = ? """, (group,)).fetchall()
         for user in users:
             try:
                 if photo_passed:
@@ -103,7 +103,7 @@ def send_to_groups(update, context):
                 else:
                     bot.sendMessage(chat_id=user[0], text="Учебная часть:\n" + message)
             except error.Unauthorized:
-                cursor.execute("""DELETE FROM users WHERE chat_id = ?""", user[0])
+                cursor.execute("""DELETE FROM users WHERE user_id = ?""", user[0])
         update.message.reply_text(f'Успешно отправили сообщение группе {group}')
     update.message.reply_text("Рассылка закончена!", reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
@@ -156,7 +156,7 @@ def send_to_courses(update, context):
     cursor = connection.cursor()
     groups = context.user_data['to_course']
     for i in groups:
-        users = cursor.execute("""SELECT chat_id FROM users WHERE "group" LIKE ? """,
+        users = cursor.execute("""SELECT user_id FROM users WHERE "group" LIKE ? """,
                                (str(i) + "%",))
         for user in users:
             if photo_passed:
