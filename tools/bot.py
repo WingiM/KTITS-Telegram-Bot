@@ -158,7 +158,7 @@ def get_timetable(update, context):
         return 1
     connection = sqlite3.connect('db/timetables.db')
     cursor = connection.cursor()
-    weekday = WEEKDAYS[message]
+    weekday = WEEKDAYS[message.capitalize()]
     group = cursor.execute("""SELECT "group" FROM users 
     WHERE user_id = ?""", (update.message.from_user['id'],)).fetchone()[0]
     try:
@@ -197,7 +197,7 @@ def get_timetablet(update, context):
         return 1
     connection = sqlite3.connect('db/timetables.db')
     cursor = connection.cursor()
-    weekday = WEEKDAYS[message]
+    weekday = WEEKDAYS[message.capitalize()]
     name = cursor.execute("""SELECT name FROM teacher_users 
         WHERE chat_id = ?""", (update.message.from_user['id'],)).fetchone()[0]
     try:

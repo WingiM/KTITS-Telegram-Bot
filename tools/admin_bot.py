@@ -103,7 +103,7 @@ def send_to_groups(update, context):
                 else:
                     bot.sendMessage(chat_id=user[0], text="Учебная часть:\n" + message)
             except error.Unauthorized:
-                cursor.execute("""DELETE FROM users WHERE user_id = ?""", user[0])
+                cursor.execute("""DELETE FROM users WHERE user_id = ?""", (user[0], ))
         update.message.reply_text(f'Успешно отправили сообщение группе {group}')
     update.message.reply_text("Рассылка закончена!", reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
@@ -159,14 +159,17 @@ def send_to_courses(update, context):
         users = cursor.execute("""SELECT user_id FROM users WHERE "group" LIKE ? """,
                                (str(i) + "%",))
         for user in users:
-            if photo_passed:
-                bot.sendPhoto(chat_id=user[0], photo=open("image_temp/file.png", 'rb'),
-                              caption=("Учебная часть:\n" + update.message.caption)
-                              if update.message.caption is not None else None)
-            else:
-                bot.sendMessage(chat_id=user[0], text="Учебная часть:\n" + message)
-        update.message.reply_text(f'Успешно отправили сообщение {str(i)} курсу',
-                                  reply_markup=ReplyKeyboardRemove())
+            try:
+                if photo_passed:
+                    bot.sendPhoto(chat_id=user[0], photo=open("image_temp/file.png", 'rb'),
+                                  caption=("Учебная часть:\n" + update.message.caption)
+                                  if update.message.caption is not None else None)
+                else:
+                    bot.sendMessage(chat_id=user[0], text="Учебная часть:\n" + message)
+            except error.Unauthorized:
+                cursor.execute("""DELETE FROM users WHERE user_id = ?""", (user[0], ))
+        update.message.reply_text(f'Успешно отправили сообщение {str(i)} курсу')
+    update.message.reply_text("Рассылка закончена!", reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
 
 
