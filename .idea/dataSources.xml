@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="timetables" uuid="d0efe31d-03b0-4963-9c95-1438d39dc583">
+    <data-source source="LOCAL" name="timetables" uuid="b079dbf1-54b5-4602-b7d1-3756c932f1be">
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:K:\Pycharm projects\Timetables\db\timetables.db</jdbc-url>
+      <jdbc-url>jdbc:sqlite:E:\Pycharm projects\Timetables\db\timetables.db</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
       <libraries>
         <library>
