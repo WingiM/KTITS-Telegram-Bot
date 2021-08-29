@@ -1,8 +1,8 @@
 import sqlite3
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import ConversationHandler
-from Linker import Linker
-from globals import WEEKDAYS
+from tools.Linker import Linker
+from tools.globals import WEEKDAYS
 
 
 class TimetablePasser:
@@ -36,7 +36,7 @@ class TimetablePasser:
         if self.check_input(update, context):
             return 1
         message = update.message.text
-        connection = sqlite3.connect('timetables.sqlite')
+        connection = sqlite3.connect('db/timetables.sqlite')
         cursor = connection.cursor()
         weekday = WEEKDAYS[message.capitalize()]
         group = cursor.execute("""SELECT "group" FROM users 
@@ -67,7 +67,7 @@ class TimetablePasser:
         if self.check_input(update, context):
             return 1
         message = update.message.text
-        connection = sqlite3.connect('timetables.sqlite')
+        connection = sqlite3.connect('db/timetables.sqlite')
         cursor = connection.cursor()
         weekday = WEEKDAYS[message.capitalize()]
         name = cursor.execute("""SELECT name FROM teacher_users 

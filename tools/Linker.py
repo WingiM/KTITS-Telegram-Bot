@@ -1,3 +1,4 @@
+import os
 import sqlite3
 from telegram import ReplyKeyboardRemove, ReplyKeyboardMarkup
 from telegram.ext import ConversationHandler
@@ -11,7 +12,7 @@ class Linker:
 
     @staticmethod
     def check_link(update, _):
-        connection = sqlite3.connect('timetables.sqlite')
+        connection = sqlite3.connect('db/timetables.sqlite')
         cursor = connection.cursor()
         if not cursor.execute("""SELECT "group" FROM users WHERE user_id = ?""",
                               (update.message.from_user['id'],)).fetchone():
@@ -26,10 +27,19 @@ class Linker:
 
     @staticmethod
     def check_teacher_link(update, _):
-        connection = sqlite3.connect('timetables.sqlite')
+        connection = sqlite3.connect('db/timetables.sqlite')
         cursor = connection.cursor()
         if not cursor.execute("""SELECT name FROM teacher_users WHERE chat_id = ?""",
                               (update.message.from_user['id'],)).fetchone():
+            return False
+        return True
+
+    @staticmethod
+    def check_admin_link(update, _):
+        connection = sqlite3.connect('db/timetables.sqlite')
+        cursor = connection.cursor()
+        if not cursor.execute("""SELECT chat_id FROM admin_users WHERE chat_id = ?""",
+                              (update.message.from_user["id"],)).fetchone():
             return False
         return True
 
@@ -50,7 +60,7 @@ class Linker:
         if not message.isdigit():
             update.message.reply_text('Вы ввели не номер группы!')
             return 1
-        connection = sqlite3.connect('timetables.sqlite')
+        connection = sqlite3.connect('db/timetables.sqlite')
         cursor = connection.cursor()
         if not cursor.execute("""SELECT * FROM groups WHERE number = ?""", (message,)).fetchone():
             update.message.reply_text('Такой группы не существует!')
@@ -81,7 +91,7 @@ class Linker:
         message = update.message.text
         if message.lower() == 'выйти':
             return self.leave(update, context)
-        connection = sqlite3.connect('timetables.sqlite')
+        connection = sqlite3.connect('db/timetables.sqlite')
         cursor = connection.cursor()
         if not cursor.execute("""SELECT * FROM teachers WHERE name = ?""", (message,)).fetchone():
             update.message.reply_text('Такой фамилии и инициалов в базе данных нет.')
@@ -96,10 +106,33 @@ class Linker:
         update.message.reply_text('Теперь вы можете использовать команду /gett для того, чтобы получить расписание\n'
                                   'Чтобы отвязаться можете использовать /unlinkt')
         return ConversationHandler.END
+    
+    def start_admin_linking(self, update, context):
+        if self.check_admin_link(update, context):
+            update.message.reply_text('Ваш аккаунт уже привязан', reply_markup=ReplyKeyboardRemove())
+            return ConversationHandler.END
+        markup = [['Выйти']]
+        key = ReplyKeyboardMarkup(markup, resize_keyboard=True)
+        update.message.reply_text('Пожалуйста, введите пароль учебной части', reply_markup=key)
+        return 1
+    
+    def link_admin(self, update, context):
+        message = update.message.text
+        if message.lower() == 'выйти':
+            return self.leave(update, context)
+        if message != os.getenv("ADMIN_PASSWORD"):
+            update.message.reply_text('Пароль неверный')
+            return 2
+        connection = sqlite3.connect('../db/timetables.db')
+        cursor = connection.cursor()
+        cursor.execute("""INSERT INTO admin_users VALUES(?)""", (update.message.from_user['id'],))
+        connection.commit()
+        update.message.reply_text('Успешно привязали аккаунт.')
+        return ConversationHandler.END
 
     def unlink_user(self, update, context):
         if self.check_link(update, context):
-            connection = sqlite3.connect('timetables.sqlite')
+            connection = sqlite3.connect('db/timetables.sqlite')
             cursor = connection.cursor()
             cursor.execute("""DELETE FROM users WHERE user_id =  ?""", (update.message.from_user['id'],))
             connection.commit()
@@ -110,7 +143,7 @@ class Linker:
 
     def unlink_teacher(self, update, context):
         if self.check_teacher_link(update, context):
-            connection = sqlite3.connect('timetables.sqlite')
+            connection = sqlite3.connect('db/timetables.sqlite')
             cursor = connection.cursor()
             cursor.execute("""DELETE FROM teacher_users WHERE chat_id =  ?""", (update.message.from_user['id'],))
             connection.commit()

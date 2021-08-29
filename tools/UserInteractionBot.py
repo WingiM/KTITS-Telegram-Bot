@@ -1,7 +1,13 @@
+import os
 from telegram import ReplyKeyboardRemove
 from telegram.ext import Updater, CommandHandler, ConversationHandler, MessageHandler, Filters
-from Linker import Linker
-from TimetablePasser import TimetablePasser
+from tools.Linker import Linker
+from tools.TimetablePasser import TimetablePasser
+
+
+def main():
+    user_bot = UserInteractionBot(os.getenv("BOT_TOKEN"), use_context=True)
+    user_bot.execute()
 
 
 class UserInteractionBot(Updater):

@@ -1,11 +1,10 @@
-from multiprocessing import Process
-from tools import bot, admin_bot, scheduler
-
+import multiprocessing
+from dotenv import load_dotenv
+from tools import AdminBot, UserInteractionBot
 
 if __name__ == '__main__':
-    p1 = Process(target=bot.main)
+    load_dotenv('.env')
+    p1 = multiprocessing.Process(target=UserInteractionBot.main)
     p1.start()
-    p2 = Process(target=scheduler.main)
+    p2 = multiprocessing.Process(target=AdminBot.main)
     p2.start()
-    p3 = Process(target=admin_bot.main)
-    p3.start()
